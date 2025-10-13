@@ -14,7 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      materials: {
+        Row: {
+          categoria: string | null
+          codigo: string
+          created_at: string | null
+          descricao: string
+          estoque_maximo: number | null
+          estoque_minimo: number
+          foto_url: string | null
+          id: string
+          localizacao: string
+          quantidade_atual: number
+          tipo: string
+          unidade_medida: string
+          updated_at: string | null
+          user_id: string
+          valor_unitario: number | null
+        }
+        Insert: {
+          categoria?: string | null
+          codigo: string
+          created_at?: string | null
+          descricao: string
+          estoque_maximo?: number | null
+          estoque_minimo?: number
+          foto_url?: string | null
+          id?: string
+          localizacao: string
+          quantidade_atual?: number
+          tipo: string
+          unidade_medida?: string
+          updated_at?: string | null
+          user_id: string
+          valor_unitario?: number | null
+        }
+        Update: {
+          categoria?: string | null
+          codigo?: string
+          created_at?: string | null
+          descricao?: string
+          estoque_maximo?: number | null
+          estoque_minimo?: number
+          foto_url?: string | null
+          id?: string
+          localizacao?: string
+          quantidade_atual?: number
+          tipo?: string
+          unidade_medida?: string
+          updated_at?: string | null
+          user_id?: string
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimentacoes: {
+        Row: {
+          created_at: string | null
+          data: string | null
+          id: string
+          material_id: string
+          observacao: string | null
+          quantidade: number
+          responsavel: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: string | null
+          id?: string
+          material_id: string
+          observacao?: string | null
+          quantidade: number
+          responsavel: string
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: string | null
+          id?: string
+          material_id?: string
+          observacao?: string | null
+          quantidade?: number
+          responsavel?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          nome: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          nome?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
