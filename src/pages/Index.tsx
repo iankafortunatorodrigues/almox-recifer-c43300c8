@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Material, Movimentacao } from "@/types/material";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { StatsCard } from "@/components/StatsCard";
 import { MaterialForm } from "@/components/MaterialForm";
 import { MovementForm } from "@/components/MovementForm";
@@ -8,41 +9,27 @@ import { MaterialsTable } from "@/components/MaterialsTable";
 import { HistoryTable } from "@/components/HistoryTable";
 import { LoansTable } from "@/components/LoansTable";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, TrendingDown, TrendingUp, AlertTriangle, Search, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2 } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, LogOut } from "lucide-react";
+
 const Index = () => {
-  const [materials, setMaterials] = useLocalStorage<Material[]>("materials", []);
-  const [movements, setMovements] = useLocalStorage<Movimentacao[]>("movements", []);
+  const { user, signOut } = useAuth();
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [movements, setMovements] = useState<Movimentacao[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Migrate old materials to include new fields
-  useEffect(() => {
-    const migratedMaterials = materials.map((material: any) => ({
-      ...material,
-      estoqueMaximo: material.estoqueMaximo ?? material.estoqueMinimo * 10,
-      unidadeMedida: material.unidadeMedida ?? "UN",
-      tipo: material.tipo ?? "estoque",
-      categoria: material.categoria ?? undefined
-    }));
-    if (JSON.stringify(migratedMaterials) !== JSON.stringify(materials)) {
-      setMaterials(migratedMaterials);
-    }
-  }, []);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Filtros para materiais de estoque
   const [stockStatusFilter, setStockStatusFilter] = useState("all");
   const [stockLocationFilter, setStockLocationFilter] = useState("all");
   const [stockCategoryFilter, setStockCategoryFilter] = useState("all");
-
-  // Filtros para materiais de empréstimo
   const [loanStatusFilter, setLoanStatusFilter] = useState("all");
   const [loanLocationFilter, setLoanLocationFilter] = useState("all");
   const [loanCategoryFilter, setLoanCategoryFilter] = useState("all");
+
   const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false);
   const [isEntradaOpen, setIsEntradaOpen] = useState(false);
   const [isSaidaOpen, setIsSaidaOpen] = useState(false);
@@ -53,60 +40,209 @@ const Index = () => {
   const [deletingMovement, setDeletingMovement] = useState<Movimentacao | null>(null);
   const [quickActionMaterial, setQuickActionMaterial] = useState<Material | null>(null);
   const [quickActionType, setQuickActionType] = useState<"entrada" | "saida" | "emprestimo" | "devolucao" | null>(null);
-  const handleAddMaterial = (materialData: Omit<Material, "id" | "dataCadastro">) => {
-    const newMaterial: Material = {
-      ...materialData,
-      id: crypto.randomUUID(),
-      dataCadastro: new Date().toISOString()
+
+  // Carregar materiais do banco de dados
+  const loadMaterials = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("materials")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Erro ao carregar materiais");
+      console.error(error);
+      return;
+    }
+
+    // Converter snake_case para camelCase
+    const materialsData: Material[] = (data || []).map((m: any) => ({
+      id: m.id,
+      codigo: m.codigo,
+      descricao: m.descricao,
+      quantidadeAtual: m.quantidade_atual,
+      localizacao: m.localizacao,
+      estoqueMinimo: m.estoque_minimo,
+      estoqueMaximo: m.estoque_maximo,
+      unidadeMedida: m.unidade_medida,
+      dataCadastro: m.created_at,
+      fotoUrl: m.foto_url,
+      tipo: m.tipo,
+      valorUnitario: m.valor_unitario ? parseFloat(m.valor_unitario) : undefined,
+      categoria: m.categoria
+    }));
+
+    setMaterials(materialsData);
+  };
+
+  // Carregar movimentações do banco de dados
+  const loadMovements = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("movimentacoes")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("data", { ascending: false });
+
+    if (error) {
+      toast.error("Erro ao carregar movimentações");
+      console.error(error);
+      return;
+    }
+
+    // Converter snake_case para camelCase
+    const movementsData: Movimentacao[] = (data || []).map((m: any) => ({
+      id: m.id,
+      materialId: m.material_id,
+      tipo: m.tipo,
+      quantidade: m.quantidade,
+      data: m.data,
+      responsavel: m.responsavel,
+      observacao: m.observacao
+    }));
+
+    setMovements(movementsData);
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([loadMaterials(), loadMovements()]);
+      setLoading(false);
     };
-    setMaterials([...materials, newMaterial]);
+
+    loadData();
+  }, [user]);
+
+  const handleAddMaterial = async (materialData: Omit<Material, "id" | "dataCadastro">) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("materials")
+      .insert({
+        user_id: user.id,
+        codigo: materialData.codigo,
+        descricao: materialData.descricao,
+        quantidade_atual: materialData.quantidadeAtual,
+        localizacao: materialData.localizacao,
+        estoque_minimo: materialData.estoqueMinimo,
+        estoque_maximo: materialData.estoqueMaximo,
+        unidade_medida: materialData.unidadeMedida,
+        foto_url: materialData.fotoUrl,
+        tipo: materialData.tipo,
+        valor_unitario: materialData.valorUnitario,
+        categoria: materialData.categoria
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        toast.error("Já existe um material com este código");
+      } else {
+        toast.error("Erro ao cadastrar material");
+        console.error(error);
+      }
+      return;
+    }
+
+    await loadMaterials();
     setIsAddMaterialOpen(false);
     toast.success("Material cadastrado com sucesso!");
   };
-  const handleUpdateMaterial = (materialData: Omit<Material, "id" | "dataCadastro">) => {
-    if (!editingMaterial) return;
-    const updatedMaterials = materials.map(m => m.id === editingMaterial.id ? {
-      ...m,
-      ...materialData
-    } : m);
-    setMaterials(updatedMaterials);
+
+  const handleUpdateMaterial = async (materialData: Omit<Material, "id" | "dataCadastro">) => {
+    if (!editingMaterial || !user) return;
+
+    const { error } = await supabase
+      .from("materials")
+      .update({
+        codigo: materialData.codigo,
+        descricao: materialData.descricao,
+        quantidade_atual: materialData.quantidadeAtual,
+        localizacao: materialData.localizacao,
+        estoque_minimo: materialData.estoqueMinimo,
+        estoque_maximo: materialData.estoqueMaximo,
+        unidade_medida: materialData.unidadeMedida,
+        foto_url: materialData.fotoUrl,
+        tipo: materialData.tipo,
+        valor_unitario: materialData.valorUnitario,
+        categoria: materialData.categoria
+      })
+      .eq("id", editingMaterial.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Erro ao atualizar material");
+      console.error(error);
+      return;
+    }
+
+    await loadMaterials();
     setEditingMaterial(null);
     toast.success("Material atualizado com sucesso!");
   };
-  const handleMovement = (type: "entrada" | "saida" | "emprestimo" | "devolucao", movementData: {
-    materialId: string;
-    quantidade: number;
-    responsavel: string;
-    observacao?: string;
-  }) => {
+
+  const handleMovement = async (
+    type: "entrada" | "saida" | "emprestimo" | "devolucao",
+    movementData: {
+      materialId: string;
+      quantidade: number;
+      responsavel: string;
+      observacao?: string;
+    }
+  ) => {
+    if (!user) return;
+
     const material = materials.find(m => m.id === movementData.materialId);
     if (!material) return;
 
-    // Para empréstimo e saída, reduz a quantidade
-    // Para entrada e devolução, aumenta a quantidade
     const shouldDecrease = type === "saida" || type === "emprestimo";
-    const newQuantity = shouldDecrease ? material.quantidadeAtual - movementData.quantidade : material.quantidadeAtual + movementData.quantidade;
+    const newQuantity = shouldDecrease
+      ? material.quantidadeAtual - movementData.quantidade
+      : material.quantidadeAtual + movementData.quantidade;
+
     if (newQuantity < 0) {
       toast.error("Quantidade insuficiente em estoque!");
       return;
     }
-    const newMovement: Movimentacao = {
-      id: crypto.randomUUID(),
-      materialId: movementData.materialId,
-      tipo: type,
-      quantidade: movementData.quantidade,
-      data: new Date().toISOString(),
-      responsavel: movementData.responsavel,
-      observacao: movementData.observacao
-    };
-    const updatedMaterials = materials.map(m => m.id === movementData.materialId ? {
-      ...m,
-      quantidadeAtual: newQuantity
-    } : m);
-    setMaterials(updatedMaterials);
-    setMovements([newMovement, ...movements]);
 
-    // Close the appropriate dialog
+    // Atualizar material
+    const { error: materialError } = await supabase
+      .from("materials")
+      .update({ quantidade_atual: newQuantity })
+      .eq("id", movementData.materialId)
+      .eq("user_id", user.id);
+
+    if (materialError) {
+      toast.error("Erro ao atualizar material");
+      console.error(materialError);
+      return;
+    }
+
+    // Inserir movimentação
+    const { error: movementError } = await supabase
+      .from("movimentacoes")
+      .insert({
+        user_id: user.id,
+        material_id: movementData.materialId,
+        tipo: type,
+        quantidade: movementData.quantidade,
+        responsavel: movementData.responsavel,
+        observacao: movementData.observacao
+      });
+
+    if (movementError) {
+      toast.error("Erro ao registrar movimentação");
+      console.error(movementError);
+      return;
+    }
+
+    await Promise.all([loadMaterials(), loadMovements()]);
+
     switch (type) {
       case "entrada":
         setIsEntradaOpen(false);
@@ -122,11 +258,12 @@ const Index = () => {
         break;
     }
 
-    // Check for low stock warning
-    const updatedMaterial = updatedMaterials.find(m => m.id === movementData.materialId);
-    if (updatedMaterial && updatedMaterial.quantidadeAtual <= updatedMaterial.estoqueMinimo) {
-      toast.warning(`⚠️ Material ${updatedMaterial.codigo} está abaixo do estoque mínimo (atual: ${updatedMaterial.quantidadeAtual}, mínimo: ${updatedMaterial.estoqueMinimo})`);
+    if (newQuantity <= material.estoqueMinimo) {
+      toast.warning(
+        `⚠️ Material ${material.codigo} está abaixo do estoque mínimo (atual: ${newQuantity}, mínimo: ${material.estoqueMinimo})`
+      );
     }
+
     const typeLabels = {
       entrada: "Entrada",
       saida: "Saída",
@@ -135,19 +272,22 @@ const Index = () => {
     };
     toast.success(`${typeLabels[type]} registrada com sucesso!`);
   };
-  const handleUpdateMovement = (movementData: {
+
+  const handleUpdateMovement = async (movementData: {
     materialId: string;
     quantidade: number;
     responsavel: string;
     observacao?: string;
   }) => {
-    if (!editingMovement) return;
+    if (!editingMovement || !user) return;
+
     const oldMovement = editingMovement;
     const oldMaterial = materials.find(m => m.id === oldMovement.materialId);
     const newMaterial = materials.find(m => m.id === movementData.materialId);
+
     if (!oldMaterial || !newMaterial) return;
 
-    // Reverter o movimento antigo
+    // Reverter movimento antigo
     let revertedQuantity = oldMaterial.quantidadeAtual;
     const oldShouldDecrease = oldMovement.tipo === "saida" || oldMovement.tipo === "emprestimo";
     if (oldShouldDecrease) {
@@ -156,7 +296,7 @@ const Index = () => {
       revertedQuantity -= oldMovement.quantidade;
     }
 
-    // Aplicar o novo movimento
+    // Aplicar novo movimento
     let newQuantity = movementData.materialId === oldMovement.materialId ? revertedQuantity : newMaterial.quantidadeAtual;
     const newShouldDecrease = oldMovement.tipo === "saida" || oldMovement.tipo === "emprestimo";
     if (newShouldDecrease) {
@@ -164,40 +304,66 @@ const Index = () => {
     } else {
       newQuantity += movementData.quantidade;
     }
+
     if (newQuantity < 0) {
       toast.error("Quantidade insuficiente em estoque!");
       return;
     }
-    const updatedMovement: Movimentacao = {
-      ...oldMovement,
-      materialId: movementData.materialId,
-      quantidade: movementData.quantidade,
-      responsavel: movementData.responsavel,
-      observacao: movementData.observacao
-    };
-    let updatedMaterials = [...materials];
 
     // Atualizar material antigo se mudou de material
     if (oldMovement.materialId !== movementData.materialId) {
-      updatedMaterials = updatedMaterials.map(m => m.id === oldMovement.materialId ? {
-        ...m,
-        quantidadeAtual: revertedQuantity
-      } : m);
+      const { error: oldMaterialError } = await supabase
+        .from("materials")
+        .update({ quantidade_atual: revertedQuantity })
+        .eq("id", oldMovement.materialId)
+        .eq("user_id", user.id);
+
+      if (oldMaterialError) {
+        toast.error("Erro ao atualizar material antigo");
+        console.error(oldMaterialError);
+        return;
+      }
     }
 
     // Atualizar novo material
-    updatedMaterials = updatedMaterials.map(m => m.id === movementData.materialId ? {
-      ...m,
-      quantidadeAtual: newQuantity
-    } : m);
-    const updatedMovements = movements.map(m => m.id === oldMovement.id ? updatedMovement : m);
-    setMaterials(updatedMaterials);
-    setMovements(updatedMovements);
+    const { error: newMaterialError } = await supabase
+      .from("materials")
+      .update({ quantidade_atual: newQuantity })
+      .eq("id", movementData.materialId)
+      .eq("user_id", user.id);
+
+    if (newMaterialError) {
+      toast.error("Erro ao atualizar material");
+      console.error(newMaterialError);
+      return;
+    }
+
+    // Atualizar movimentação
+    const { error: movementError } = await supabase
+      .from("movimentacoes")
+      .update({
+        material_id: movementData.materialId,
+        quantidade: movementData.quantidade,
+        responsavel: movementData.responsavel,
+        observacao: movementData.observacao
+      })
+      .eq("id", oldMovement.id)
+      .eq("user_id", user.id);
+
+    if (movementError) {
+      toast.error("Erro ao atualizar movimentação");
+      console.error(movementError);
+      return;
+    }
+
+    await Promise.all([loadMaterials(), loadMovements()]);
     setEditingMovement(null);
     toast.success("Movimentação atualizada com sucesso!");
   };
-  const handleDeleteMovement = () => {
-    if (!deletingMovement) return;
+
+  const handleDeleteMovement = async () => {
+    if (!deletingMovement || !user) return;
+
     const material = materials.find(m => m.id === deletingMovement.materialId);
     if (!material) return;
 
@@ -209,43 +375,90 @@ const Index = () => {
     } else {
       revertedQuantity -= deletingMovement.quantidade;
     }
+
     if (revertedQuantity < 0) {
       toast.error("Não é possível excluir: resultaria em quantidade negativa!");
       setDeletingMovement(null);
       return;
     }
-    const updatedMaterials = materials.map(m => m.id === deletingMovement.materialId ? {
-      ...m,
-      quantidadeAtual: revertedQuantity
-    } : m);
-    const updatedMovements = movements.filter(m => m.id !== deletingMovement.id);
-    setMaterials(updatedMaterials);
-    setMovements(updatedMovements);
+
+    // Atualizar material
+    const { error: materialError } = await supabase
+      .from("materials")
+      .update({ quantidade_atual: revertedQuantity })
+      .eq("id", deletingMovement.materialId)
+      .eq("user_id", user.id);
+
+    if (materialError) {
+      toast.error("Erro ao atualizar material");
+      console.error(materialError);
+      return;
+    }
+
+    // Deletar movimentação
+    const { error: movementError } = await supabase
+      .from("movimentacoes")
+      .delete()
+      .eq("id", deletingMovement.id)
+      .eq("user_id", user.id);
+
+    if (movementError) {
+      toast.error("Erro ao excluir movimentação");
+      console.error(movementError);
+      return;
+    }
+
+    await Promise.all([loadMaterials(), loadMovements()]);
     setDeletingMovement(null);
     toast.success("Movimentação excluída com sucesso!");
   };
-  const filteredMaterials = materials.filter(m => m.codigo.toLowerCase().includes(searchQuery.toLowerCase()) || m.descricao.toLowerCase().includes(searchQuery.toLowerCase()));
-  const stockMaterials = filteredMaterials.filter(m => m.tipo === "estoque");
-  const loanMaterials = filteredMaterials.filter(m => m.tipo === "emprestimo");
-  const lowStockMaterials = materials.filter(m => m.quantidadeAtual <= m.estoqueMinimo);
-  const totalItems = materials.reduce((acc, m) => acc + m.quantidadeAtual, 0);
-  const recentMovements = movements.slice(0, 5);
-  const activeLoans = movements.filter(m => {
-    if (m.tipo !== "emprestimo") return false;
-    // Check if there's a corresponding return
-    const hasReturn = movements.some(mov => mov.tipo === "devolucao" && mov.materialId === m.materialId && mov.responsavel === m.responsavel && new Date(mov.data) > new Date(m.data));
-    return !hasReturn;
-  });
+
   const handleQuickAction = (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => {
     setQuickActionMaterial(material);
     setQuickActionType(action);
   };
-  return <div className="min-h-screen bg-background">
+
+  const filteredMaterials = materials.filter(
+    m =>
+      m.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.descricao.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const stockMaterials = filteredMaterials.filter(m => m.tipo === "estoque");
+  const loanMaterials = filteredMaterials.filter(m => m.tipo === "emprestimo");
+  const lowStockMaterials = materials.filter(m => m.quantidadeAtual <= m.estoqueMinimo);
+  const totalItems = materials.reduce((acc, m) => acc + m.quantidadeAtual, 0);
+
+  const activeLoans = movements.filter(m => {
+    if (m.tipo !== "emprestimo") return false;
+    const hasReturn = movements.some(
+      mov =>
+        mov.tipo === "devolucao" &&
+        mov.materialId === m.materialId &&
+        mov.responsavel === m.responsavel &&
+        new Date(mov.data) > new Date(m.data)
+    );
+    return !hasReturn;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold"> Almoxarifado</h1>
+              <h1 className="text-3xl font-bold">Almoxarifado</h1>
               <p className="text-muted-foreground">Gestão de estoque e materiais</p>
             </div>
             <div className="flex gap-2">
@@ -261,10 +474,6 @@ const Index = () => {
                 <ArrowUpCircle className="h-4 w-4" />
                 Saída
               </Button>
-              <Button onClick={() => setIsAddMaterialOpen(true)} variant="secondary" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nova Ferramenta
-              </Button>
               <Button onClick={() => setIsEmprestimoOpen(true)} variant="destructive" className="gap-2">
                 <HandHelping className="h-4 w-4" />
                 Empréstimo
@@ -272,6 +481,10 @@ const Index = () => {
               <Button onClick={() => setIsDevolucaoOpen(true)} variant="success" className="gap-2">
                 <Undo2 className="h-4 w-4" />
                 Devolução
+              </Button>
+              <Button onClick={signOut} variant="outline" className="gap-2">
+                <LogOut className="h-4 w-4" />
+                Sair
               </Button>
             </div>
           </div>
@@ -282,7 +495,12 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard title="Total de Itens" value={totalItems} icon={Package} variant="default" />
           <StatsCard title="Materiais Cadastrados" value={materials.length} icon={TrendingUp} variant="success" />
-          <StatsCard title="Alertas de Estoque" value={lowStockMaterials.length} icon={AlertTriangle} variant={lowStockMaterials.length > 0 ? "warning" : "default"} />
+          <StatsCard
+            title="Alertas de Estoque"
+            value={lowStockMaterials.length}
+            icon={AlertTriangle}
+            variant={lowStockMaterials.length > 0 ? "warning" : "default"}
+          />
           <StatsCard title="Movimentações (mês)" value={movements.length} icon={TrendingDown} variant="default" />
         </div>
 
@@ -292,182 +510,266 @@ const Index = () => {
             <TabsTrigger value="loan-materials">Materiais de Empréstimo</TabsTrigger>
             <TabsTrigger value="loans">
               Empréstimos Ativos
-              {activeLoans.length > 0 && <Badge variant="secondary" className="ml-2">
+              {activeLoans.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
                   {activeLoans.length}
-                </Badge>}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="history">Histórico</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stock-materials" className="space-y-6">
-            <MaterialsTable materials={stockMaterials} onViewLocation={material => {
-            toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
-          }} onEdit={material => setEditingMaterial(material)} onQuickAction={handleQuickAction} tipo="estoque" searchQuery={searchQuery} onSearchChange={setSearchQuery} statusFilter={stockStatusFilter} onStatusFilterChange={setStockStatusFilter} locationFilter={stockLocationFilter} onLocationFilterChange={setStockLocationFilter} categoryFilter={stockCategoryFilter} onCategoryFilterChange={setStockCategoryFilter} onClearFilters={() => {
-            setSearchQuery("");
-            setStockStatusFilter("all");
-            setStockLocationFilter("all");
-            setStockCategoryFilter("all");
-          }} />
+            <MaterialsTable
+              materials={stockMaterials}
+              onViewLocation={material => {
+                toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
+              }}
+              onEdit={material => setEditingMaterial(material)}
+              onQuickAction={handleQuickAction}
+              tipo="estoque"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={stockStatusFilter}
+              onStatusFilterChange={setStockStatusFilter}
+              locationFilter={stockLocationFilter}
+              onLocationFilterChange={setStockLocationFilter}
+              categoryFilter={stockCategoryFilter}
+              onCategoryFilterChange={setStockCategoryFilter}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setStockStatusFilter("all");
+                setStockLocationFilter("all");
+                setStockCategoryFilter("all");
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="loan-materials" className="space-y-6">
-            <MaterialsTable materials={loanMaterials} onViewLocation={material => {
-            toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
-          }} onEdit={material => setEditingMaterial(material)} onQuickAction={handleQuickAction} tipo="emprestimo" searchQuery={searchQuery} onSearchChange={setSearchQuery} statusFilter={loanStatusFilter} onStatusFilterChange={setLoanStatusFilter} locationFilter={loanLocationFilter} onLocationFilterChange={setLoanLocationFilter} categoryFilter={loanCategoryFilter} onCategoryFilterChange={setLoanCategoryFilter} onClearFilters={() => {
-            setSearchQuery("");
-            setLoanStatusFilter("all");
-            setLoanLocationFilter("all");
-            setLoanCategoryFilter("all");
-          }} />
+            <MaterialsTable
+              materials={loanMaterials}
+              onViewLocation={material => {
+                toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
+              }}
+              onEdit={material => setEditingMaterial(material)}
+              onQuickAction={handleQuickAction}
+              tipo="emprestimo"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={loanStatusFilter}
+              onStatusFilterChange={setLoanStatusFilter}
+              locationFilter={loanLocationFilter}
+              onLocationFilterChange={setLoanLocationFilter}
+              categoryFilter={loanCategoryFilter}
+              onCategoryFilterChange={setLoanCategoryFilter}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setLoanStatusFilter("all");
+                setLoanLocationFilter("all");
+                setLoanCategoryFilter("all");
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="loans" className="space-y-6">
-            <LoansTable loans={activeLoans} materials={materials} onReturn={loan => {
-            setQuickActionMaterial(materials.find(m => m.id === loan.materialId) || null);
-            setQuickActionType("devolucao");
-            setIsDevolucaoOpen(true);
-          }} />
+            <LoansTable
+              loans={activeLoans}
+              materials={materials}
+              onReturn={loan => {
+                setQuickActionMaterial(materials.find(m => m.id === loan.materialId) || null);
+                setQuickActionType("devolucao");
+                setIsDevolucaoOpen(true);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
-            <HistoryTable movements={movements} materials={materials} onEdit={movement => setEditingMovement(movement)} onDelete={movement => setDeletingMovement(movement)} />
+            <HistoryTable
+              movements={movements}
+              materials={materials}
+              onEdit={movement => setEditingMovement(movement)}
+              onDelete={movement => setDeletingMovement(movement)}
+            />
           </TabsContent>
         </Tabs>
       </main>
 
+      {/* Dialogs */}
       <Dialog open={isAddMaterialOpen} onOpenChange={setIsAddMaterialOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Material</DialogTitle>
-            <DialogDescription>
-              Preencha as informações do material que será adicionado ao estoque
-            </DialogDescription>
+            <DialogDescription>Preencha as informações do material que será adicionado ao estoque</DialogDescription>
           </DialogHeader>
           <MaterialForm onSubmit={handleAddMaterial} onCancel={() => setIsAddMaterialOpen(false)} />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEntradaOpen || quickActionType === "entrada" && !!quickActionMaterial} onOpenChange={open => {
-      setIsEntradaOpen(open);
-      if (!open) {
-        setQuickActionMaterial(null);
-        setQuickActionType(null);
-      }
-    }}>
+      <Dialog
+        open={isEntradaOpen || (quickActionType === "entrada" && !!quickActionMaterial)}
+        onOpenChange={open => {
+          setIsEntradaOpen(open);
+          if (!open) {
+            setQuickActionMaterial(null);
+            setQuickActionType(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Registrar Entrada</DialogTitle>
-            <DialogDescription>
-              Registre a entrada de materiais no almoxarifado
-            </DialogDescription>
+            <DialogDescription>Registre a entrada de materiais no almoxarifado</DialogDescription>
           </DialogHeader>
-          <MovementForm materials={materials} type="entrada" onSubmit={data => {
-          handleMovement("entrada", data);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} onCancel={() => {
-          setIsEntradaOpen(false);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} initialData={quickActionMaterial && quickActionType === "entrada" ? {
-          materialId: quickActionMaterial.id,
-          quantidade: 1,
-          responsavel: "",
-          observacao: ""
-        } : undefined} />
+          <MovementForm
+            materials={materials}
+            type="entrada"
+            onSubmit={data => {
+              handleMovement("entrada", data);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            onCancel={() => {
+              setIsEntradaOpen(false);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            initialData={
+              quickActionMaterial && quickActionType === "entrada"
+                ? {
+                    materialId: quickActionMaterial.id,
+                    quantidade: 1,
+                    responsavel: "",
+                    observacao: ""
+                  }
+                : undefined
+            }
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isSaidaOpen || quickActionType === "saida" && !!quickActionMaterial} onOpenChange={open => {
-      setIsSaidaOpen(open);
-      if (!open) {
-        setQuickActionMaterial(null);
-        setQuickActionType(null);
-      }
-    }}>
+      <Dialog
+        open={isSaidaOpen || (quickActionType === "saida" && !!quickActionMaterial)}
+        onOpenChange={open => {
+          setIsSaidaOpen(open);
+          if (!open) {
+            setQuickActionMaterial(null);
+            setQuickActionType(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Registrar Saída</DialogTitle>
-            <DialogDescription>
-              Registre a retirada de materiais do almoxarifado
-            </DialogDescription>
+            <DialogDescription>Registre a retirada de materiais do almoxarifado</DialogDescription>
           </DialogHeader>
-          <MovementForm materials={materials} type="saida" onSubmit={data => {
-          handleMovement("saida", data);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} onCancel={() => {
-          setIsSaidaOpen(false);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} initialData={quickActionMaterial && quickActionType === "saida" ? {
-          materialId: quickActionMaterial.id,
-          quantidade: 1,
-          responsavel: "",
-          observacao: ""
-        } : undefined} />
+          <MovementForm
+            materials={materials}
+            type="saida"
+            onSubmit={data => {
+              handleMovement("saida", data);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            onCancel={() => {
+              setIsSaidaOpen(false);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            initialData={
+              quickActionMaterial && quickActionType === "saida"
+                ? {
+                    materialId: quickActionMaterial.id,
+                    quantidade: 1,
+                    responsavel: "",
+                    observacao: ""
+                  }
+                : undefined
+            }
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEmprestimoOpen || quickActionType === "emprestimo" && !!quickActionMaterial} onOpenChange={open => {
-      setIsEmprestimoOpen(open);
-      if (!open) {
-        setQuickActionMaterial(null);
-        setQuickActionType(null);
-      }
-    }}>
+      <Dialog
+        open={isEmprestimoOpen || (quickActionType === "emprestimo" && !!quickActionMaterial)}
+        onOpenChange={open => {
+          setIsEmprestimoOpen(open);
+          if (!open) {
+            setQuickActionMaterial(null);
+            setQuickActionType(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Registrar Empréstimo</DialogTitle>
-            <DialogDescription>
-              Registre o empréstimo de ferramentas/materiais
-            </DialogDescription>
+            <DialogDescription>Registre o empréstimo de ferramentas/materiais</DialogDescription>
           </DialogHeader>
-          <MovementForm materials={materials} type="emprestimo" onSubmit={data => {
-          handleMovement("emprestimo", data);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} onCancel={() => {
-          setIsEmprestimoOpen(false);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} initialData={quickActionMaterial && quickActionType === "emprestimo" ? {
-          materialId: quickActionMaterial.id,
-          quantidade: 1,
-          responsavel: "",
-          observacao: ""
-        } : undefined} />
+          <MovementForm
+            materials={materials}
+            type="emprestimo"
+            onSubmit={data => {
+              handleMovement("emprestimo", data);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            onCancel={() => {
+              setIsEmprestimoOpen(false);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            initialData={
+              quickActionMaterial && quickActionType === "emprestimo"
+                ? {
+                    materialId: quickActionMaterial.id,
+                    quantidade: 1,
+                    responsavel: "",
+                    observacao: ""
+                  }
+                : undefined
+            }
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDevolucaoOpen || quickActionType === "devolucao" && !!quickActionMaterial} onOpenChange={open => {
-      setIsDevolucaoOpen(open);
-      if (!open) {
-        setQuickActionMaterial(null);
-        setQuickActionType(null);
-      }
-    }}>
+      <Dialog
+        open={isDevolucaoOpen || (quickActionType === "devolucao" && !!quickActionMaterial)}
+        onOpenChange={open => {
+          setIsDevolucaoOpen(open);
+          if (!open) {
+            setQuickActionMaterial(null);
+            setQuickActionType(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Registrar Devolução</DialogTitle>
-            <DialogDescription>
-              Registre a devolução de ferramentas/materiais emprestados
-            </DialogDescription>
+            <DialogDescription>Registre a devolução de ferramentas/materiais emprestados</DialogDescription>
           </DialogHeader>
-          <MovementForm materials={materials} type="devolucao" onSubmit={data => {
-          handleMovement("devolucao", data);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} onCancel={() => {
-          setIsDevolucaoOpen(false);
-          setQuickActionMaterial(null);
-          setQuickActionType(null);
-        }} initialData={quickActionMaterial && quickActionType === "devolucao" ? {
-          materialId: quickActionMaterial.id,
-          quantidade: 1,
-          responsavel: "",
-          observacao: ""
-        } : undefined} />
+          <MovementForm
+            materials={materials}
+            type="devolucao"
+            onSubmit={data => {
+              handleMovement("devolucao", data);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            onCancel={() => {
+              setIsDevolucaoOpen(false);
+              setQuickActionMaterial(null);
+              setQuickActionType(null);
+            }}
+            initialData={
+              quickActionMaterial && quickActionType === "devolucao"
+                ? {
+                    materialId: quickActionMaterial.id,
+                    quantidade: 1,
+                    responsavel: "",
+                    observacao: ""
+                  }
+                : undefined
+            }
+          />
         </DialogContent>
       </Dialog>
 
@@ -475,11 +777,13 @@ const Index = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Material</DialogTitle>
-            <DialogDescription>
-              Atualize as informações do material, incluindo a foto
-            </DialogDescription>
+            <DialogDescription>Atualize as informações do material, incluindo a foto</DialogDescription>
           </DialogHeader>
-          <MaterialForm initialData={editingMaterial || undefined} onSubmit={handleUpdateMaterial} onCancel={() => setEditingMaterial(null)} />
+          <MaterialForm
+            initialData={editingMaterial || undefined}
+            onSubmit={handleUpdateMaterial}
+            onCancel={() => setEditingMaterial(null)}
+          />
         </DialogContent>
       </Dialog>
 
@@ -487,11 +791,15 @@ const Index = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Movimentação</DialogTitle>
-            <DialogDescription>
-              Atualize as informações da movimentação
-            </DialogDescription>
+            <DialogDescription>Atualize as informações da movimentação</DialogDescription>
           </DialogHeader>
-          <MovementForm materials={materials} type={editingMovement?.tipo || "entrada"} onSubmit={handleUpdateMovement} onCancel={() => setEditingMovement(null)} initialData={editingMovement || undefined} />
+          <MovementForm
+            materials={materials}
+            type={editingMovement?.tipo || "entrada"}
+            onSubmit={handleUpdateMovement}
+            onCancel={() => setEditingMovement(null)}
+            initialData={editingMovement || undefined}
+          />
         </DialogContent>
       </Dialog>
 
@@ -500,17 +808,18 @@ const Index = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta movimentação? Esta ação reverterá a quantidade no estoque e não pode ser desfeita.
+              Tem certeza que deseja excluir esta movimentação? Esta ação reverterá a quantidade no estoque e não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMovement}>
-              Excluir
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteMovement}>Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
