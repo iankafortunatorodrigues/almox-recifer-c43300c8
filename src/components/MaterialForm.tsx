@@ -1,0 +1,190 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Material } from "@/types/material";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+interface MaterialFormProps {
+  onSubmit: (material: Omit<Material, "id" | "dataCadastro">) => void;
+  onCancel: () => void;
+  initialData?: Material;
+}
+
+export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormProps) {
+  const [formData, setFormData] = useState({
+    codigo: initialData?.codigo || "",
+    descricao: initialData?.descricao || "",
+    quantidadeAtual: initialData?.quantidadeAtual.toString() || "",
+    localizacao: initialData?.localizacao || "",
+    estoqueMinimo: initialData?.estoqueMinimo.toString() || "",
+    estoqueMaximo: initialData?.estoqueMaximo?.toString() || "",
+    unidadeMedida: initialData?.unidadeMedida || "",
+    fotoUrl: initialData?.fotoUrl || "",
+    tipo: initialData?.tipo || "estoque",
+    valorUnitario: initialData?.valorUnitario?.toString() || "",
+    categoria: initialData?.categoria || "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      codigo: formData.codigo,
+      descricao: formData.descricao,
+      quantidadeAtual: Number(formData.quantidadeAtual),
+      localizacao: formData.localizacao,
+      estoqueMinimo: Number(formData.estoqueMinimo),
+      estoqueMaximo: formData.estoqueMaximo ? Number(formData.estoqueMaximo) : undefined,
+      unidadeMedida: formData.unidadeMedida,
+      fotoUrl: formData.fotoUrl || undefined,
+      tipo: formData.tipo as "estoque" | "emprestimo",
+      valorUnitario: formData.valorUnitario ? Number(formData.valorUnitario) : undefined,
+      categoria: formData.categoria || undefined,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Tipo de Material</Label>
+        <RadioGroup
+          value={formData.tipo}
+          onValueChange={(value) => setFormData({ ...formData, tipo: value as "estoque" | "emprestimo" })}
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="estoque" id="estoque" />
+            <Label htmlFor="estoque" className="font-normal cursor-pointer">Material de Estoque</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="emprestimo" id="emprestimo" />
+            <Label htmlFor="emprestimo" className="font-normal cursor-pointer">Material de Empréstimo</Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="codigo">Código do Material</Label>
+        <Input
+          id="codigo"
+          value={formData.codigo}
+          onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="descricao">Descrição</Label>
+        <Input
+          id="descricao"
+          value={formData.descricao}
+          onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="quantidade">Quantidade Inicial</Label>
+          <Input
+            id="quantidade"
+            type="number"
+            min="0"
+            value={formData.quantidadeAtual}
+            onChange={(e) => setFormData({ ...formData, quantidadeAtual: e.target.value })}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
+          <Input
+            id="unidadeMedida"
+            placeholder="Ex: UN, KG, M, L"
+            value={formData.unidadeMedida}
+            onChange={(e) => setFormData({ ...formData, unidadeMedida: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="minimo">Estoque Mínimo</Label>
+          <Input
+            id="minimo"
+            type="number"
+            min="0"
+            value={formData.estoqueMinimo}
+            onChange={(e) => setFormData({ ...formData, estoqueMinimo: e.target.value })}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="maximo">Estoque Máximo (opcional)</Label>
+          <Input
+            id="maximo"
+            type="number"
+            min="0"
+            value={formData.estoqueMaximo}
+            onChange={(e) => setFormData({ ...formData, estoqueMaximo: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="localizacao">Localização</Label>
+        <Input
+          id="localizacao"
+          placeholder="Ex: Prateleira A1, Caixa 5"
+          value={formData.localizacao}
+          onChange={(e) => setFormData({ ...formData, localizacao: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="categoria">Categoria de Utilização (opcional)</Label>
+        <Input
+          id="categoria"
+          placeholder="Ex: EPI, ELÉTRICO, QUÍMICOS, HIDRÁULICO"
+          value={formData.categoria}
+          onChange={(e) => setFormData({ ...formData, categoria: e.target.value.toUpperCase() })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="fotoUrl">URL da Foto (opcional)</Label>
+        <Input
+          id="fotoUrl"
+          type="url"
+          placeholder="https://exemplo.com/foto.jpg"
+          value={formData.fotoUrl}
+          onChange={(e) => setFormData({ ...formData, fotoUrl: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="valorUnitario">Valor Unitário (R$) (opcional)</Label>
+        <Input
+          id="valorUnitario"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          value={formData.valorUnitario}
+          onChange={(e) => setFormData({ ...formData, valorUnitario: e.target.value })}
+        />
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="submit" className="flex-1">
+          {initialData ? "Atualizar Material" : "Cadastrar Material"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}
