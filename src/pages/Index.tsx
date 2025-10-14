@@ -193,32 +193,8 @@ const Index = () => {
   ) => {
     if (!user) return;
 
+    // O trigger do banco de dados agora valida e atualiza o estoque automaticamente
     const material = materials.find(m => m.id === movementData.materialId);
-    if (!material) return;
-
-    const shouldDecrease = type === "saida" || type === "emprestimo";
-    const newQuantity = shouldDecrease
-      ? material.quantidadeAtual - movementData.quantidade
-      : material.quantidadeAtual + movementData.quantidade;
-
-    if (newQuantity < 0) {
-      toast.error("Quantidade insuficiente em estoque!");
-      return;
-    }
-
-    // Atualizar material
-    const { error: materialError } = await supabase
-      .from("materials")
-      .update({ quantidade_atual: newQuantity })
-      .eq("id", movementData.materialId)
-      .eq("user_id", user.id);
-
-    if (materialError) {
-      toast.error("Erro ao atualizar material");
-      return;
-    }
-
-    // Inserir movimentação
     const { error: movementError } = await supabase
       .from("movimentacoes")
       .insert({
@@ -231,7 +207,14 @@ const Index = () => {
       });
 
     if (movementError) {
-      toast.error("Erro ao registrar movimentação");
+      // Mostrar erro específico do banco de dados
+      if (movementError.message.includes("Estoque insuficiente")) {
+        toast.error("Estoque insuficiente para esta operação");
+      } else if (movementError.message.includes("Material não encontrado")) {
+        toast.error("Material não encontrado");
+      } else {
+        toast.error("Erro ao registrar movimentação");
+      }
       return;
     }
 
@@ -252,9 +235,17 @@ const Index = () => {
         break;
     }
 
-    if (newQuantity <= material.estoqueMinimo) {
+    // Recarregar material para verificar estoque atualizado
+    const { data: updatedMaterials } = await supabase
+      .from("materials")
+      .select("*")
+      .eq("id", movementData.materialId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (updatedMaterials && updatedMaterials.quantidade_atual <= material!.estoqueMinimo) {
       toast.warning(
-        `⚠️ Material ${material.codigo} está abaixo do estoque mínimo (atual: ${newQuantity}, mínimo: ${material.estoqueMinimo})`
+        `⚠️ Material ${material!.codigo} está abaixo do estoque mínimo (atual: ${updatedMaterials.quantidade_atual}, mínimo: ${material!.estoqueMinimo})`
       );
     }
 
@@ -275,62 +266,7 @@ const Index = () => {
   }) => {
     if (!editingMovement || !user) return;
 
-    const oldMovement = editingMovement;
-    const oldMaterial = materials.find(m => m.id === oldMovement.materialId);
-    const newMaterial = materials.find(m => m.id === movementData.materialId);
-
-    if (!oldMaterial || !newMaterial) return;
-
-    // Reverter movimento antigo
-    let revertedQuantity = oldMaterial.quantidadeAtual;
-    const oldShouldDecrease = oldMovement.tipo === "saida" || oldMovement.tipo === "emprestimo";
-    if (oldShouldDecrease) {
-      revertedQuantity += oldMovement.quantidade;
-    } else {
-      revertedQuantity -= oldMovement.quantidade;
-    }
-
-    // Aplicar novo movimento
-    let newQuantity = movementData.materialId === oldMovement.materialId ? revertedQuantity : newMaterial.quantidadeAtual;
-    const newShouldDecrease = oldMovement.tipo === "saida" || oldMovement.tipo === "emprestimo";
-    if (newShouldDecrease) {
-      newQuantity -= movementData.quantidade;
-    } else {
-      newQuantity += movementData.quantidade;
-    }
-
-    if (newQuantity < 0) {
-      toast.error("Quantidade insuficiente em estoque!");
-      return;
-    }
-
-    // Atualizar material antigo se mudou de material
-    if (oldMovement.materialId !== movementData.materialId) {
-      const { error: oldMaterialError } = await supabase
-        .from("materials")
-        .update({ quantidade_atual: revertedQuantity })
-        .eq("id", oldMovement.materialId)
-        .eq("user_id", user.id);
-
-      if (oldMaterialError) {
-        toast.error("Erro ao atualizar material antigo");
-        return;
-      }
-    }
-
-    // Atualizar novo material
-    const { error: newMaterialError } = await supabase
-      .from("materials")
-      .update({ quantidade_atual: newQuantity })
-      .eq("id", movementData.materialId)
-      .eq("user_id", user.id);
-
-    if (newMaterialError) {
-      toast.error("Erro ao atualizar material");
-      return;
-    }
-
-    // Atualizar movimentação
+    // O trigger do banco de dados gerencia toda a lógica de estoque
     const { error: movementError } = await supabase
       .from("movimentacoes")
       .update({
@@ -339,11 +275,17 @@ const Index = () => {
         responsavel: movementData.responsavel,
         observacao: movementData.observacao
       })
-      .eq("id", oldMovement.id)
+      .eq("id", editingMovement.id)
       .eq("user_id", user.id);
 
     if (movementError) {
-      toast.error("Erro ao atualizar movimentação");
+      if (movementError.message.includes("Estoque insuficiente")) {
+        toast.error("Estoque insuficiente para esta operação");
+      } else if (movementError.message.includes("Material não encontrado")) {
+        toast.error("Material não encontrado");
+      } else {
+        toast.error("Erro ao atualizar movimentação");
+      }
       return;
     }
 
@@ -355,37 +297,7 @@ const Index = () => {
   const handleDeleteMovement = async () => {
     if (!deletingMovement || !user) return;
 
-    const material = materials.find(m => m.id === deletingMovement.materialId);
-    if (!material) return;
-
-    // Reverter o movimento
-    let revertedQuantity = material.quantidadeAtual;
-    const shouldDecrease = deletingMovement.tipo === "saida" || deletingMovement.tipo === "emprestimo";
-    if (shouldDecrease) {
-      revertedQuantity += deletingMovement.quantidade;
-    } else {
-      revertedQuantity -= deletingMovement.quantidade;
-    }
-
-    if (revertedQuantity < 0) {
-      toast.error("Não é possível excluir: resultaria em quantidade negativa!");
-      setDeletingMovement(null);
-      return;
-    }
-
-    // Atualizar material
-    const { error: materialError } = await supabase
-      .from("materials")
-      .update({ quantidade_atual: revertedQuantity })
-      .eq("id", deletingMovement.materialId)
-      .eq("user_id", user.id);
-
-    if (materialError) {
-      toast.error("Erro ao atualizar material");
-      return;
-    }
-
-    // Deletar movimentação
+    // O trigger do banco de dados reverte automaticamente o estoque ao deletar
     const { error: movementError } = await supabase
       .from("movimentacoes")
       .delete()

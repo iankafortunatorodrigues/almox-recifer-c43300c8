@@ -46,8 +46,29 @@ export default function Auth() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("A senha deve ter no mínimo 6 caracteres");
+    // Validação forte de senha
+    if (password.length < 12) {
+      toast.error("A senha deve ter no mínimo 12 caracteres");
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      toast.error("A senha deve conter pelo menos uma letra maiúscula");
+      return;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      toast.error("A senha deve conter pelo menos uma letra minúscula");
+      return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      toast.error("A senha deve conter pelo menos um número");
+      return;
+    }
+
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      toast.error("A senha deve conter pelo menos um caractere especial (!@#$%^&*)");
       return;
     }
 
@@ -203,7 +224,7 @@ export default function Auth() {
                     minLength={6}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Mínimo de 6 caracteres
+                    Mínimo 12 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais
                   </p>
                 </div>
 
