@@ -47,8 +47,8 @@ export default function Auth() {
     }
 
     // Validação forte de senha
-    if (password.length < 12) {
-      toast.error("A senha deve ter no mínimo 12 caracteres");
+    if (password.length < 8) {
+      toast.error("A senha deve ter no mínimo 8 caracteres");
       return;
     }
 
@@ -224,7 +224,7 @@ export default function Auth() {
                     minLength={6}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Mínimo 12 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais
+                    Mínimo 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais
                   </p>
                 </div>
 
