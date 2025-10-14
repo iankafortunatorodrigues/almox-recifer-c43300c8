@@ -53,7 +53,6 @@ const Index = () => {
 
     if (error) {
       toast.error("Erro ao carregar materiais");
-      console.error(error);
       return;
     }
 
@@ -89,7 +88,6 @@ const Index = () => {
 
     if (error) {
       toast.error("Erro ao carregar movimentações");
-      console.error(error);
       return;
     }
 
@@ -144,7 +142,6 @@ const Index = () => {
         toast.error("Já existe um material com este código");
       } else {
         toast.error("Erro ao cadastrar material");
-        console.error(error);
       }
       return;
     }
@@ -177,7 +174,6 @@ const Index = () => {
 
     if (error) {
       toast.error("Erro ao atualizar material");
-      console.error(error);
       return;
     }
 
@@ -219,7 +215,6 @@ const Index = () => {
 
     if (materialError) {
       toast.error("Erro ao atualizar material");
-      console.error(materialError);
       return;
     }
 
@@ -237,7 +232,6 @@ const Index = () => {
 
     if (movementError) {
       toast.error("Erro ao registrar movimentação");
-      console.error(movementError);
       return;
     }
 
@@ -320,7 +314,6 @@ const Index = () => {
 
       if (oldMaterialError) {
         toast.error("Erro ao atualizar material antigo");
-        console.error(oldMaterialError);
         return;
       }
     }
@@ -334,7 +327,6 @@ const Index = () => {
 
     if (newMaterialError) {
       toast.error("Erro ao atualizar material");
-      console.error(newMaterialError);
       return;
     }
 
@@ -352,7 +344,6 @@ const Index = () => {
 
     if (movementError) {
       toast.error("Erro ao atualizar movimentação");
-      console.error(movementError);
       return;
     }
 
@@ -391,7 +382,6 @@ const Index = () => {
 
     if (materialError) {
       toast.error("Erro ao atualizar material");
-      console.error(materialError);
       return;
     }
 
@@ -404,7 +394,6 @@ const Index = () => {
 
     if (movementError) {
       toast.error("Erro ao excluir movimentação");
-      console.error(movementError);
       return;
     }
 
