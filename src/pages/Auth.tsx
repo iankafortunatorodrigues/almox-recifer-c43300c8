@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Package } from "lucide-react";
+import { Package, Download } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -15,6 +15,10 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   useEffect(() => {
     // Verificar se o usuário já está logado
@@ -33,10 +37,58 @@ export default function Auth() {
       }
     });
 
+    // Capturar evento de instalação PWA
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, [navigate]);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      toast.info("App já está instalado ou não está disponível para instalação");
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      toast.success("App instalado com sucesso!");
+    }
+    
+    setDeferredPrompt(null);
+    setShowInstallPrompt(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      toast.error("Digite seu email");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.");
+      setShowForgotPassword(false);
+      setResetEmail("");
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +193,17 @@ export default function Auth() {
           <CardDescription>
             Faça login ou crie sua conta para gerenciar seu estoque
           </CardDescription>
+          
+          {showInstallPrompt && (
+            <Button
+              onClick={handleInstallClick}
+              variant="outline"
+              className="mt-4 w-full"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Instalar App no Dispositivo
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -150,37 +213,81 @@ export default function Auth() {
             </TabsList>
 
             <TabsContent value="login">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                </div>
+              {showForgotPassword ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email para recuperação</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Senha</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                  <Button
+                    onClick={handleForgotPassword}
+                    className="w-full"
                     disabled={loading}
-                  />
-                </div>
+                  >
+                    {loading ? "Enviando..." : "Enviar Email de Recuperação"}
+                  </Button>
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Entrando..." : "Entrar"}
-                </Button>
-              </form>
+                  <Button
+                    onClick={() => setShowForgotPassword(false)}
+                    variant="ghost"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    Voltar ao Login
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Senha</Label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Entrando..." : "Entrar"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    variant="link"
+                    className="w-full text-sm"
+                    disabled={loading}
+                  >
+                    Esqueci minha senha
+                  </Button>
+                </form>
+              )}
             </TabsContent>
 
             <TabsContent value="cadastro">
