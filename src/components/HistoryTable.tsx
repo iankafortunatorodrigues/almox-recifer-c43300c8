@@ -149,10 +149,10 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4">
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filtrar por tipo" />
+          <SelectTrigger className="text-xs sm:text-sm">
+            <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os tipos</SelectItem>
@@ -164,11 +164,11 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
         </Select>
 
         <Select value={filterCategoria} onValueChange={setFilterCategoria}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filtrar por categoria" />
+          <SelectTrigger className="text-xs sm:text-sm">
+            <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
+            <SelectItem value="all">Todas</SelectItem>
             {availableCategories.map((categoria) => (
               <SelectItem key={categoria} value={categoria}>
                 {categoria}
@@ -178,7 +178,8 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
         </Select>
 
         <Input
-          placeholder="Filtrar por responsável..."
+          placeholder="Responsável..."
+          className="text-xs sm:text-sm"
           value={filterResponsavel}
           onChange={(e) => setFilterResponsavel(e.target.value)}
         />
@@ -186,6 +187,7 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
         <Input
           type="date"
           placeholder="Data inicial"
+          className="text-xs sm:text-sm"
           value={filterStartDate}
           onChange={(e) => setFilterStartDate(e.target.value)}
         />
@@ -193,29 +195,31 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
         <Input
           type="date"
           placeholder="Data final"
+          className="text-xs sm:text-sm"
           value={filterEndDate}
           onChange={(e) => setFilterEndDate(e.target.value)}
         />
 
-        <Button onClick={exportToPDF} variant="outline" className="gap-2">
+        <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-2">
           <Download className="h-4 w-4" />
-          Exportar PDF
+          <span className="hidden sm:inline">Exportar PDF</span>
+          <span className="sm:hidden">PDF</span>
         </Button>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-20">Foto</TableHead>
-              <TableHead>Data/Hora</TableHead>
+              <TableHead className="w-12 sm:w-20">Foto</TableHead>
+              <TableHead className="hidden lg:table-cell">Data/Hora</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Material</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead className="text-center">Quantidade</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Observação</TableHead>
-              <TableHead className="text-center">Ações</TableHead>
+              <TableHead className="min-w-[150px]">Material</TableHead>
+              <TableHead className="hidden md:table-cell">Categoria</TableHead>
+              <TableHead className="text-center">Qtd.</TableHead>
+              <TableHead className="hidden sm:table-cell">Responsável</TableHead>
+              <TableHead className="hidden lg:table-cell">Observação</TableHead>
+              <TableHead className="text-center min-w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -235,58 +239,61 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
                         <img 
                           src={material.fotoUrl} 
                           alt={material.descricao}
-                          className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-8 h-8 sm:w-12 sm:h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setSelectedImage({ url: material.fotoUrl!, alt: material.descricao })}
                           onError={(e) => {
                             e.currentTarget.src = "https://via.placeholder.com/48?text=Sem+Foto";
                           }}
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                          Sem foto
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-muted rounded flex items-center justify-center">
+                          <span className="hidden sm:inline text-xs text-muted-foreground">Sem foto</span>
+                          <span className="sm:hidden text-xs">-</span>
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{formatDate(movement.data)}</TableCell>
+                    <TableCell className="text-xs sm:text-sm hidden lg:table-cell">{formatDate(movement.data)}</TableCell>
                     <TableCell>
-                      <Badge variant={getMovementVariant(movement.tipo)} className="gap-1">
+                      <Badge variant={getMovementVariant(movement.tipo)} className="gap-1 text-xs">
                         {getMovementIcon(movement.tipo)}
-                        {getMovementLabel(movement.tipo)}
+                        <span className="hidden sm:inline">{getMovementLabel(movement.tipo)}</span>
                       </Badge>
                     </TableCell>
-                    <TableCell>{getMaterialName(movement.materialId)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">{getMaterialName(movement.materialId)}</TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {material?.categoria ? (
-                        <Badge variant="outline">{material.categoria}</Badge>
+                        <Badge variant="outline" className="text-xs">{material.categoria}</Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
+                        <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center font-semibold">{movement.quantidade}</TableCell>
-                    <TableCell>{movement.responsavel}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell className="text-center font-semibold text-xs sm:text-sm">{movement.quantidade}</TableCell>
+                    <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{movement.responsavel}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">
                       {movement.observacao || "-"}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex gap-1 justify-center">
                         {onEdit && (
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7"
                             onClick={() => onEdit(movement)}
-                            title="Editar movimentação"
+                            title="Editar"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3 w-3" />
                           </Button>
                         )}
                         {onDelete && (
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7"
                             onClick={() => onDelete(movement)}
-                            title="Excluir movimentação"
+                            title="Excluir"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         )}
                       </div>

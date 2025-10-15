@@ -82,7 +82,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="quantidade">Quantidade Inicial</Label>
           <Input
@@ -107,7 +107,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="minimo">Estoque Mínimo</Label>
           <Input

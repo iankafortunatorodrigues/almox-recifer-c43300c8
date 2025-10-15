@@ -165,28 +165,29 @@ export function MaterialsTable({
       />
 
       <div className="flex justify-end">
-        <Button onClick={exportToPDF} variant="outline" className="gap-2">
+        <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-2">
           <Download className="h-4 w-4" />
-          Exportar PDF
+          <span className="hidden sm:inline">Exportar PDF</span>
+          <span className="sm:hidden">PDF</span>
         </Button>
       </div>
       
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-20">Foto</TableHead>
-              <TableHead>Código</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead className="text-center">Quantidade</TableHead>
-              <TableHead className="text-center">Mínimo</TableHead>
-              <TableHead className="text-center">Máximo</TableHead>
-              <TableHead className="text-center">Valor Unit.</TableHead>
-              <TableHead className="text-center">Valor Total</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead>Localização</TableHead>
-              <TableHead className="text-center">Ações</TableHead>
+              <TableHead className="w-12 sm:w-20">Foto</TableHead>
+              <TableHead className="min-w-[80px]">Código</TableHead>
+              <TableHead className="min-w-[150px]">Descrição</TableHead>
+              <TableHead className="hidden lg:table-cell">Categoria</TableHead>
+              <TableHead className="text-center min-w-[100px]">Qtd.</TableHead>
+              <TableHead className="text-center hidden md:table-cell">Mín.</TableHead>
+              <TableHead className="text-center hidden md:table-cell">Máx.</TableHead>
+              <TableHead className="text-center hidden lg:table-cell">Valor Unit.</TableHead>
+              <TableHead className="text-center hidden lg:table-cell">Valor Total</TableHead>
+              <TableHead className="text-center hidden sm:table-cell">Status</TableHead>
+              <TableHead className="min-w-[120px]">Local</TableHead>
+              <TableHead className="text-center min-w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -208,46 +209,47 @@ export function MaterialsTable({
                         <img 
                           src={material.fotoUrl} 
                           alt={material.descricao}
-                          className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-8 h-8 sm:w-12 sm:h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setSelectedImage({ url: material.fotoUrl!, alt: material.descricao })}
                           onError={(e) => {
                             e.currentTarget.src = "https://via.placeholder.com/48?text=Sem+Foto";
                           }}
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                          Sem foto
+                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                          <span className="hidden sm:inline text-xs">Sem foto</span>
+                          <span className="sm:hidden">-</span>
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">{material.codigo}</TableCell>
-                    <TableCell>{material.descricao}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium text-xs sm:text-sm">{material.codigo}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">{material.descricao}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {material.categoria ? (
-                        <Badge variant="outline">{material.categoria}</Badge>
+                        <Badge variant="outline" className="text-xs">{material.categoria}</Badge>
                       ) : (
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center font-semibold">
-                      {material.quantidadeAtual} {material.unidadeMedida}
+                    <TableCell className="text-center font-semibold text-xs sm:text-sm">
+                      {material.quantidadeAtual} <span className="hidden sm:inline">{material.unidadeMedida}</span>
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
                       {material.estoqueMinimo}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
                       {material.estoqueMaximo}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground">
+                    <TableCell className="text-center text-muted-foreground text-xs hidden lg:table-cell">
                       {material.valorUnitario ? `R$ ${material.valorUnitario.toFixed(2)}` : "-"}
                     </TableCell>
-                    <TableCell className="text-center font-semibold">
+                    <TableCell className="text-center font-semibold text-xs hidden lg:table-cell">
                       {material.valorUnitario 
                         ? `R$ ${(material.valorUnitario * material.quantidadeAtual).toFixed(2)}`
                         : "-"}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={status.variant}>
+                    <TableCell className="text-center hidden sm:table-cell">
+                      <Badge variant={status.variant} className="text-xs">
                         {status.variant === "destructive" && <AlertTriangle className="h-3 w-3 mr-1" />}
                         {status.label}
                       </Badge>
@@ -258,10 +260,11 @@ export function MaterialsTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onViewLocation(material)}
-                          className="gap-2 justify-start"
+                          className="gap-1 justify-start text-xs h-7 px-2"
                         >
-                          <MapPin className="h-4 w-4" />
-                          {material.localizacao}
+                          <MapPin className="h-3 w-3" />
+                          <span className="hidden sm:inline">{material.localizacao}</span>
+                          <span className="sm:hidden">{material.localizacao.slice(0, 8)}...</span>
                         </Button>
                         {onQuickAction && (
                           <div className="flex gap-1">
@@ -272,7 +275,7 @@ export function MaterialsTable({
                                   size="sm"
                                   onClick={() => onQuickAction(material, "entrada")}
                                   title="Entrada rápida"
-                                  className="flex-1 h-7"
+                                  className="flex-1 h-6 px-1"
                                 >
                                   <ArrowDownCircle className="h-3 w-3" />
                                 </Button>
@@ -281,7 +284,7 @@ export function MaterialsTable({
                                   size="sm"
                                   onClick={() => onQuickAction(material, "saida")}
                                   title="Saída rápida"
-                                  className="flex-1 h-7"
+                                  className="flex-1 h-6 px-1"
                                 >
                                   <ArrowUpCircle className="h-3 w-3" />
                                 </Button>
@@ -293,7 +296,7 @@ export function MaterialsTable({
                                   size="sm"
                                   onClick={() => onQuickAction(material, "emprestimo")}
                                   title="Empréstimo rápido"
-                                  className="flex-1 h-7"
+                                  className="flex-1 h-6 px-1"
                                 >
                                   <HandHelping className="h-3 w-3" />
                                 </Button>
@@ -302,7 +305,7 @@ export function MaterialsTable({
                                   size="sm"
                                   onClick={() => onQuickAction(material, "devolucao")}
                                   title="Devolução rápida"
-                                  className="flex-1 h-7"
+                                  className="flex-1 h-6 px-1"
                                 >
                                   <Undo2 className="h-3 w-3" />
                                 </Button>
@@ -317,10 +320,10 @@ export function MaterialsTable({
                         variant="outline"
                         size="sm"
                         onClick={() => onEdit(material)}
-                        className="gap-2"
+                        className="gap-1 h-7 px-2"
                       >
-                        <Pencil className="h-4 w-4" />
-                        Editar
+                        <Pencil className="h-3 w-3" />
+                        <span className="hidden sm:inline text-xs">Editar</span>
                       </Button>
                     </TableCell>
                   </TableRow>

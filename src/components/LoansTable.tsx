@@ -126,24 +126,25 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
       />
 
       <div className="flex justify-end">
-        <Button onClick={exportToPDF} variant="outline" className="gap-2">
+        <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-2">
           <Download className="h-4 w-4" />
-          Exportar PDF
+          <span className="hidden sm:inline">Exportar PDF</span>
+          <span className="sm:hidden">PDF</span>
         </Button>
       </div>
       
     
-    <div className="rounded-lg border bg-card">
+    <div className="rounded-lg border bg-card overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Material</TableHead>
-            <TableHead>Quantidade</TableHead>
-            <TableHead>Responsável</TableHead>
-            <TableHead>Data Empréstimo</TableHead>
-            <TableHead>Dias</TableHead>
-            <TableHead>Observação</TableHead>
-            <TableHead className="text-center">Ação</TableHead>
+            <TableHead className="min-w-[150px]">Material</TableHead>
+            <TableHead className="text-center">Qtd.</TableHead>
+            <TableHead className="min-w-[120px]">Responsável</TableHead>
+            <TableHead className="hidden md:table-cell">Data Empréstimo</TableHead>
+            <TableHead className="text-center">Dias</TableHead>
+            <TableHead className="hidden lg:table-cell">Observação</TableHead>
+            <TableHead className="text-center min-w-[100px]">Ação</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -160,16 +161,16 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
               const daysLoaned = getDaysLoaned(loan.data);
               return (
                 <TableRow key={loan.id}>
-                  <TableCell className="font-medium">{getMaterialName(loan.materialId)}</TableCell>
-                  <TableCell className="text-center font-semibold">{loan.quantidade}</TableCell>
-                  <TableCell>{loan.responsavel}</TableCell>
-                  <TableCell className="text-sm">{formatDate(loan.data)}</TableCell>
-                  <TableCell>
-                    <Badge variant={daysLoaned > 7 ? "destructive" : daysLoaned > 3 ? "warning" : "default"}>
-                      {daysLoaned} {daysLoaned === 1 ? "dia" : "dias"}
+                  <TableCell className="font-medium text-xs sm:text-sm">{getMaterialName(loan.materialId)}</TableCell>
+                  <TableCell className="text-center font-semibold text-xs sm:text-sm">{loan.quantidade}</TableCell>
+                  <TableCell className="text-xs sm:text-sm">{loan.responsavel}</TableCell>
+                  <TableCell className="text-xs sm:text-sm hidden md:table-cell">{formatDate(loan.data)}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant={daysLoaned > 7 ? "destructive" : daysLoaned > 3 ? "warning" : "default"} className="text-xs">
+                      {daysLoaned}<span className="hidden sm:inline"> {daysLoaned === 1 ? "dia" : "dias"}</span><span className="sm:hidden">d</span>
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">
                     {loan.observacao || "-"}
                   </TableCell>
                   <TableCell className="text-center">
@@ -177,10 +178,10 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => onReturn(loan)}
-                      className="gap-2"
+                      className="gap-1 h-7 px-2"
                     >
-                      <Undo2 className="h-4 w-4" />
-                      Devolver
+                      <Undo2 className="h-3 w-3" />
+                      <span className="hidden sm:inline text-xs">Devolver</span>
                     </Button>
                   </TableCell>
                 </TableRow>

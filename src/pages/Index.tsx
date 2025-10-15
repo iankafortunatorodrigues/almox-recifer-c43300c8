@@ -355,45 +355,46 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+      <header className="border-b bg-card sticky top-0 z-10">
+        <div className="px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Almoxarifado</h1>
-              <p className="text-muted-foreground">Gestão de estoque e materiais</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">Almoxarifado</h1>
+              <p className="text-sm text-muted-foreground">Gestão de estoque e materiais</p>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={() => setIsAddMaterialOpen(true)} className="gap-2">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <Button onClick={() => setIsAddMaterialOpen(true)} size="sm" className="gap-2 flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" />
-                Novo Material
+                <span className="hidden sm:inline">Novo Material</span>
+                <span className="sm:hidden">Novo</span>
               </Button>
-              <Button onClick={() => setIsEntradaOpen(true)} variant="success" className="gap-2">
+              <Button onClick={() => setIsEntradaOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
                 <ArrowDownCircle className="h-4 w-4" />
-                Entrada
+                <span className="hidden sm:inline">Entrada</span>
               </Button>
-              <Button onClick={() => setIsSaidaOpen(true)} variant="destructive" className="gap-2">
+              <Button onClick={() => setIsSaidaOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
                 <ArrowUpCircle className="h-4 w-4" />
-                Saída
+                <span className="hidden sm:inline">Saída</span>
               </Button>
-              <Button onClick={() => setIsEmprestimoOpen(true)} variant="destructive" className="gap-2">
+              <Button onClick={() => setIsEmprestimoOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
                 <HandHelping className="h-4 w-4" />
-                Empréstimo
+                <span className="hidden sm:inline">Empréstimo</span>
               </Button>
-              <Button onClick={() => setIsDevolucaoOpen(true)} variant="success" className="gap-2">
+              <Button onClick={() => setIsDevolucaoOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
                 <Undo2 className="h-4 w-4" />
-                Devolução
+                <span className="hidden sm:inline">Devolução</span>
               </Button>
-              <Button onClick={signOut} variant="outline" className="gap-2">
+              <Button onClick={signOut} variant="outline" size="sm" className="gap-2">
                 <LogOut className="h-4 w-4" />
-                Sair
+                <span className="sr-only sm:not-sr-only">Sair</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <main className="px-3 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <StatsCard title="Total de Itens" value={totalItems} icon={Package} variant="default" />
           <StatsCard title="Materiais Cadastrados" value={materials.length} icon={TrendingUp} variant="success" />
           <StatsCard
@@ -405,19 +406,26 @@ const Index = () => {
           <StatsCard title="Movimentações (mês)" value={movements.length} icon={TrendingDown} variant="default" />
         </div>
 
-        <Tabs defaultValue="stock-materials" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="stock-materials">Materiais de Estoque</TabsTrigger>
-            <TabsTrigger value="loan-materials">Materiais de Empréstimo</TabsTrigger>
-            <TabsTrigger value="loans">
-              Empréstimos Ativos
+        <Tabs defaultValue="stock-materials" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="stock-materials" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Materiais de Estoque</span>
+              <span className="sm:hidden">Estoque</span>
+            </TabsTrigger>
+            <TabsTrigger value="loan-materials" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Materiais de Empréstimo</span>
+              <span className="sm:hidden">Empréstimo</span>
+            </TabsTrigger>
+            <TabsTrigger value="loans" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Empréstimos Ativos</span>
+              <span className="sm:hidden">Ativos</span>
               {activeLoans.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">
                   {activeLoans.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="history">Histórico</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stock-materials" className="space-y-6">
@@ -497,7 +505,7 @@ const Index = () => {
 
       {/* Dialogs */}
       <Dialog open={isAddMaterialOpen} onOpenChange={setIsAddMaterialOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Material</DialogTitle>
             <DialogDescription>Preencha as informações do material que será adicionado ao estoque</DialogDescription>
@@ -516,7 +524,7 @@ const Index = () => {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Entrada</DialogTitle>
             <DialogDescription>Registre a entrada de materiais no almoxarifado</DialogDescription>
@@ -558,7 +566,7 @@ const Index = () => {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Saída</DialogTitle>
             <DialogDescription>Registre a retirada de materiais do almoxarifado</DialogDescription>
@@ -600,7 +608,7 @@ const Index = () => {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Empréstimo</DialogTitle>
             <DialogDescription>Registre o empréstimo de ferramentas/materiais</DialogDescription>
@@ -642,7 +650,7 @@ const Index = () => {
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Devolução</DialogTitle>
             <DialogDescription>Registre a devolução de ferramentas/materiais emprestados</DialogDescription>
@@ -675,7 +683,7 @@ const Index = () => {
       </Dialog>
 
       <Dialog open={!!editingMaterial} onOpenChange={open => !open && setEditingMaterial(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Editar Material</DialogTitle>
             <DialogDescription>Atualize as informações do material, incluindo a foto</DialogDescription>
@@ -689,7 +697,7 @@ const Index = () => {
       </Dialog>
 
       <Dialog open={!!editingMovement} onOpenChange={open => !open && setEditingMovement(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Movimentação</DialogTitle>
             <DialogDescription>Atualize as informações da movimentação</DialogDescription>
@@ -705,7 +713,7 @@ const Index = () => {
       </Dialog>
 
       <AlertDialog open={!!deletingMovement} onOpenChange={open => !open && setDeletingMovement(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] sm:w-full max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
