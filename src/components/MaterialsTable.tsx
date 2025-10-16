@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Material } from "@/types/material";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download } from "lucide-react";
+import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2 } from "lucide-react";
 import { ImageDialog } from "@/components/ImageDialog";
 import { MaterialsFilter } from "@/components/MaterialsFilter";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ interface MaterialsTableProps {
   materials: Material[];
   onViewLocation: (material: Material) => void;
   onEdit: (material: Material) => void;
+  onDelete: (material: Material) => void;
   onQuickAction?: (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => void;
   tipo: "estoque" | "emprestimo";
   searchQuery: string;
@@ -37,6 +39,7 @@ export function MaterialsTable({
   materials, 
   onViewLocation, 
   onEdit, 
+  onDelete,
   onQuickAction, 
   tipo,
   searchQuery,
@@ -107,6 +110,7 @@ export function MaterialsTable({
     doc.text(`Data de geração: ${new Date().toLocaleDateString("pt-BR")}`, 14, 30);
     
     const tableData = filteredMaterials.map((material) => {
+      const status = getStockStatus(material);
       const valorTotal = material.valorUnitario 
         ? (material.valorUnitario * material.quantidadeAtual).toFixed(2)
         : "-";
@@ -117,17 +121,17 @@ export function MaterialsTable({
         `${material.quantidadeAtual} ${material.unidadeMedida}`,
         material.estoqueMinimo.toString(),
         material.estoqueMaximo?.toString() || "-",
+        status.label,
         material.valorUnitario ? `R$ ${material.valorUnitario.toFixed(2)}` : "-",
-        material.valorUnitario ? `R$ ${valorTotal}` : "-",
-        material.localizacao
+        material.valorUnitario ? `R$ ${valorTotal}` : "-"
       ];
     });
 
     autoTable(doc, {
-      head: [["Código", "Descrição", "Categoria", "Qtd", "Mín", "Máx", "Valor Unit.", "Valor Total", "Localização"]],
+      head: [["Código", "Descrição", "Categoria", "Qtd", "Mín", "Máx", "Status", "Valor Unit.", "Valor Total"]],
       body: tableData,
       startY: 35,
-      styles: { fontSize: 7 },
+      styles: { fontSize: 8 },
       headStyles: { fillColor: [71, 85, 105] },
     });
 
@@ -148,6 +152,33 @@ export function MaterialsTable({
     doc.save(`${tipo === "estoque" ? "materiais_estoque" : "materiais_emprestimo"}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const exportToExcel = () => {
+    const excelData = filteredMaterials.map((material) => {
+      const status = getStockStatus(material);
+      const valorTotal = material.valorUnitario 
+        ? (material.valorUnitario * material.quantidadeAtual).toFixed(2)
+        : "";
+      return {
+        "Código": material.codigo,
+        "Descrição": material.descricao,
+        "Categoria": material.categoria || "",
+        "Quantidade": material.quantidadeAtual,
+        "Unidade": material.unidadeMedida,
+        "Mínimo": material.estoqueMinimo,
+        "Máximo": material.estoqueMaximo || "",
+        "Status": status.label,
+        "Valor Unitário": material.valorUnitario ? material.valorUnitario.toFixed(2) : "",
+        "Valor Total": valorTotal,
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, tipo === "estoque" ? "Estoque" : "Empréstimo");
+    
+    XLSX.writeFile(wb, `${tipo === "estoque" ? "materiais_estoque" : "materiais_emprestimo"}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="space-y-4">
       <MaterialsFilter
@@ -164,11 +195,16 @@ export function MaterialsTable({
         onClearFilters={onClearFilters}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-2">
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Exportar PDF</span>
           <span className="sm:hidden">PDF</span>
+        </Button>
+        <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" />
+          <span className="hidden sm:inline">Exportar Excel</span>
+          <span className="sm:hidden">Excel</span>
         </Button>
       </div>
       
@@ -316,15 +352,26 @@ export function MaterialsTable({
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEdit(material)}
-                        className="gap-1 h-7 px-2"
-                      >
-                        <Pencil className="h-3 w-3" />
-                        <span className="hidden sm:inline text-xs">Editar</span>
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onEdit(material)}
+                          className="gap-1 h-7 px-2"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          <span className="hidden sm:inline text-xs">Editar</span>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => onDelete(material)}
+                          className="gap-1 h-7 px-2"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          <span className="hidden sm:inline text-xs">Excluir</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

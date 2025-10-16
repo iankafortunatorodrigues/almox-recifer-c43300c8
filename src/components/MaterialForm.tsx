@@ -26,6 +26,38 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
     categoria: initialData?.categoria || "",
   });
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Imagem muito grande. Tamanho máximo: 5MB");
+      return;
+    }
+
+    setUploadingImage(true);
+    
+    try {
+      // Converter para base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, fotoUrl: reader.result as string });
+        setUploadingImage(false);
+      };
+      reader.onerror = () => {
+        alert("Erro ao carregar imagem");
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      alert("Erro ao processar imagem");
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
@@ -154,14 +186,63 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="fotoUrl">URL da Foto (opcional)</Label>
-        <Input
-          id="fotoUrl"
-          type="url"
-          placeholder="https://exemplo.com/foto.jpg"
-          value={formData.fotoUrl}
-          onChange={(e) => setFormData({ ...formData, fotoUrl: e.target.value })}
-        />
+        <Label htmlFor="fotoUrl">Foto do Material (opcional)</Label>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Label htmlFor="fotoFile" className="cursor-pointer">
+                <div className="flex items-center justify-center gap-2 h-10 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                  {uploadingImage ? "Carregando..." : "📁 Escolher Arquivo"}
+                </div>
+              </Label>
+              <Input
+                id="fotoFile"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploadingImage}
+              />
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="fotoCamera" className="cursor-pointer">
+                <div className="flex items-center justify-center gap-2 h-10 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors">
+                  {uploadingImage ? "Carregando..." : "📷 Tirar Foto"}
+                </div>
+              </Label>
+              <Input
+                id="fotoCamera"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploadingImage}
+              />
+            </div>
+          </div>
+          {formData.fotoUrl && (
+            <div className="relative">
+              <img 
+                src={formData.fotoUrl} 
+                alt="Preview" 
+                className="w-full h-32 object-cover rounded-md"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setFormData({ ...formData, fotoUrl: "" })}
+                className="absolute top-2 right-2"
+              >
+                Remover
+              </Button>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Tamanho máximo: 5MB. Formatos aceitos: JPG, PNG, WEBP
+          </p>
+        </div>
       </div>
 
       <div className="space-y-2">

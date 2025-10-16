@@ -38,6 +38,7 @@ const Index = () => {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [editingMovement, setEditingMovement] = useState<Movimentacao | null>(null);
   const [deletingMovement, setDeletingMovement] = useState<Movimentacao | null>(null);
+  const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
   const [quickActionMaterial, setQuickActionMaterial] = useState<Material | null>(null);
   const [quickActionType, setQuickActionType] = useState<"entrada" | "saida" | "emprestimo" | "devolucao" | null>(null);
 
@@ -314,6 +315,33 @@ const Index = () => {
     toast.success("Movimentação excluída com sucesso!");
   };
 
+  const handleDeleteMaterial = async () => {
+    if (!deletingMaterial || !user) return;
+
+    // Verificar se há movimentações associadas
+    const materialMovements = movements.filter(m => m.materialId === deletingMaterial.id);
+    if (materialMovements.length > 0) {
+      toast.error("Não é possível excluir um material com movimentações registradas");
+      setDeletingMaterial(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("materials")
+      .delete()
+      .eq("id", deletingMaterial.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Erro ao excluir material");
+      return;
+    }
+
+    await loadMaterials();
+    setDeletingMaterial(null);
+    toast.success("Material excluído com sucesso!");
+  };
+
   const handleQuickAction = (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => {
     setQuickActionMaterial(material);
     setQuickActionType(action);
@@ -435,6 +463,7 @@ const Index = () => {
                 toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
               }}
               onEdit={material => setEditingMaterial(material)}
+              onDelete={material => setDeletingMaterial(material)}
               onQuickAction={handleQuickAction}
               tipo="estoque"
               searchQuery={searchQuery}
@@ -461,6 +490,7 @@ const Index = () => {
                 toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
               }}
               onEdit={material => setEditingMaterial(material)}
+              onDelete={material => setDeletingMaterial(material)}
               onQuickAction={handleQuickAction}
               tipo="emprestimo"
               searchQuery={searchQuery}
@@ -724,6 +754,26 @@ const Index = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteMovement}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deletingMaterial} onOpenChange={open => !open && setDeletingMaterial(null)}>
+        <AlertDialogContent className="w-[95vw] sm:w-full max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão do material</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o material "{deletingMaterial?.descricao}"? Esta ação não pode ser desfeita.
+              {movements.some(m => m.materialId === deletingMaterial?.id) && (
+                <span className="block mt-2 text-destructive font-semibold">
+                  ⚠️ Este material possui movimentações registradas e não pode ser excluído.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMaterial}>Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
