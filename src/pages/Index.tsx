@@ -75,7 +75,8 @@ const Index = () => {
       fotoUrl: m.foto_url,
       tipo: m.tipo,
       valorUnitario: m.valor_unitario ? parseFloat(m.valor_unitario) : undefined,
-      categoria: m.categoria
+      categoria: m.categoria,
+      statusCompra: m.status_compra || "pendente"
     }));
 
     setMaterials(materialsData);
@@ -104,7 +105,8 @@ const Index = () => {
       quantidade: m.quantidade,
       data: m.data,
       responsavel: m.responsavel,
-      observacao: m.observacao
+      observacao: m.observacao,
+      fotoUrl: m.foto_url
     }));
 
     setMovements(movementsData);
@@ -346,6 +348,26 @@ const Index = () => {
     toast.success("Material excluído com sucesso!");
   };
 
+  const handleTogglePurchaseStatus = async (material: Material) => {
+    if (!user) return;
+    
+    const newStatus = material.statusCompra === "comprado" ? "pendente" : "comprado";
+    
+    const { error } = await supabase
+      .from("materials")
+      .update({ status_compra: newStatus })
+      .eq("id", material.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Erro ao atualizar status de compra");
+      return;
+    }
+
+    toast.success(newStatus === "comprado" ? "Material marcado como comprado!" : "Material marcado como pendente");
+    await loadMaterials();
+  };
+
   const handleQuickAction = (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => {
     setQuickActionMaterial(material);
     setQuickActionType(action);
@@ -475,6 +497,7 @@ const Index = () => {
               onEdit={material => setEditingMaterial(material)}
               onDelete={material => setDeletingMaterial(material)}
               onQuickAction={handleQuickAction}
+              onTogglePurchase={handleTogglePurchaseStatus}
               tipo="estoque"
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -490,6 +513,7 @@ const Index = () => {
                 setStockLocationFilter("all");
                 setStockCategoryFilter("all");
               }}
+              userRole={role}
             />
           </TabsContent>
 
@@ -502,6 +526,7 @@ const Index = () => {
               onEdit={material => setEditingMaterial(material)}
               onDelete={material => setDeletingMaterial(material)}
               onQuickAction={handleQuickAction}
+              onTogglePurchase={handleTogglePurchaseStatus}
               tipo="emprestimo"
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -517,6 +542,7 @@ const Index = () => {
                 setLoanLocationFilter("all");
                 setLoanCategoryFilter("all");
               }}
+              userRole={role}
             />
           </TabsContent>
 

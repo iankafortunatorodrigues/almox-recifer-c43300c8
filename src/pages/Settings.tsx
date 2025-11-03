@@ -6,18 +6,22 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Settings() {
   const { isAdmin, loading } = useUserRole();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<"compras" | "diretor">("compras");
   const [users, setUsers] = useState<any[]>([]);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -49,6 +53,39 @@ export default function Settings() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      
+      if (error) throw error;
+
+      toast({
+        title: "Senha alterada",
+        description: "Sua senha foi alterada com sucesso!",
+      });
+
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -62,16 +99,15 @@ export default function Settings() {
     }
 
     try {
-      // Criar usuário usando função admin
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
+        options: { emailRedirectTo: `${window.location.origin}/` }
       });
 
       if (authError) throw authError;
 
       if (authData.user) {
-        // Adicionar role ao usuário
         const { error: roleError } = await supabase
           .from("user_roles")
           .insert({ user_id: authData.user.id, role: newUserRole });
@@ -115,67 +151,104 @@ export default function Settings() {
         </div>
 
         <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Criar Novo Usuário
-          </h2>
-          <form onSubmit={handleCreateUser} className="space-y-4">
+          <h2 className="text-xl font-semibold mb-4">Alterar Senha</h2>
+          <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="newPassword">Nova Senha</Label>
               <Input
-                id="email"
-                type="email"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="usuario@email.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
+                id="newPassword"
                 type="password"
-                value={newUserPassword}
-                onChange={(e) => setNewUserPassword(e.target.value)}
-                placeholder="Senha forte"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Digite a nova senha"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Tipo de Usuário</Label>
-              <Select value={newUserRole} onValueChange={(value: any) => setNewUserRole(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="compras">Compras (pode visualizar e marcar como comprado)</SelectItem>
-                  <SelectItem value="diretor">Diretor (apenas visualização)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirme a nova senha"
+                required
+              />
             </div>
 
             <Button type="submit" className="w-full">
-              Criar Usuário
+              Alterar Senha
             </Button>
           </form>
         </Card>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
-          <div className="space-y-2">
-            {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-3 border rounded">
-                <div>
-                  <p className="font-medium">{user.email}</p>
-                  <p className="text-sm text-muted-foreground">{user.nome}</p>
+        {isAdmin && (
+          <>
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Criar Novo Usuário
+              </h2>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="usuario@email.com"
+                    required
+                  />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                    placeholder="Senha forte"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="role">Tipo de Usuário</Label>
+                  <Select value={newUserRole} onValueChange={(value: any) => setNewUserRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compras">Compras (pode visualizar e marcar como comprado)</SelectItem>
+                      <SelectItem value="diretor">Diretor (apenas visualização)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button type="submit" className="w-full">
+                  Criar Usuário
+                </Button>
+              </form>
+            </Card>
+
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
+              <div className="space-y-2">
+                {users.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 border rounded">
+                    <div>
+                      <p className="font-medium">{user.email}</p>
+                      <p className="text-sm text-muted-foreground">{user.nome}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );

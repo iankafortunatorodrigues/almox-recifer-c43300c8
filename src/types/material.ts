@@ -14,6 +14,7 @@ export interface Material {
   tipo: "estoque" | "emprestimo";
   valorUnitario?: number;
   categoria?: string;
+  statusCompra?: "pendente" | "comprado";
 }
 
 export interface Movimentacao {
@@ -24,4 +25,5 @@ export interface Movimentacao {
   data: string;
   responsavel: string;
   observacao?: string;
+  fotoUrl?: string;
 }

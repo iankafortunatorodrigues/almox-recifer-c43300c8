@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Material } from "@/types/material";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2 } from "lucide-react";
+import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2, ShoppingCart, CheckCircle } from "lucide-react";
 import { ImageDialog } from "@/components/ImageDialog";
 import { MaterialsFilter } from "@/components/MaterialsFilter";
 import jsPDF from "jspdf";
@@ -23,6 +23,7 @@ interface MaterialsTableProps {
   onEdit: (material: Material) => void;
   onDelete: (material: Material) => void;
   onQuickAction?: (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => void;
+  onTogglePurchase?: (material: Material) => void;
   tipo: "estoque" | "emprestimo";
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -33,6 +34,7 @@ interface MaterialsTableProps {
   categoryFilter: string;
   onCategoryFilterChange: (value: string) => void;
   onClearFilters: () => void;
+  userRole?: "admin" | "compras" | "diretor" | null;
 }
 
 export function MaterialsTable({ 
@@ -40,7 +42,8 @@ export function MaterialsTable({
   onViewLocation, 
   onEdit, 
   onDelete,
-  onQuickAction, 
+  onQuickAction,
+  onTogglePurchase,
   tipo,
   searchQuery,
   onSearchChange,
@@ -50,7 +53,8 @@ export function MaterialsTable({
   onLocationFilterChange,
   categoryFilter,
   onCategoryFilterChange,
-  onClearFilters
+  onClearFilters,
+  userRole
 }: MaterialsTableProps) {
   const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
 
@@ -352,25 +356,50 @@ export function MaterialsTable({
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(material)}
-                          className="gap-1 h-7 px-2"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          <span className="hidden sm:inline text-xs">Editar</span>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => onDelete(material)}
-                          className="gap-1 h-7 px-2"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          <span className="hidden sm:inline text-xs">Excluir</span>
-                        </Button>
+                      <div className="flex gap-1 flex-col">
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(material)}
+                            className="gap-1 h-7 px-2 flex-1"
+                            disabled={userRole === "diretor"}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span className="hidden sm:inline text-xs">Editar</span>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => onDelete(material)}
+                            className="gap-1 h-7 px-2 flex-1"
+                            disabled={userRole === "diretor"}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span className="hidden sm:inline text-xs">Excluir</span>
+                          </Button>
+                        </div>
+                        {(userRole === "admin" || userRole === "compras") && onTogglePurchase && (
+                          <Button
+                            variant={material.statusCompra === "comprado" ? "success" : "outline"}
+                            size="sm"
+                            onClick={() => onTogglePurchase(material)}
+                            className="gap-1 h-7 px-2"
+                            title={material.statusCompra === "comprado" ? "Marcar como pendente" : "Marcar como comprado"}
+                          >
+                            {material.statusCompra === "comprado" ? (
+                              <>
+                                <CheckCircle className="h-3 w-3" />
+                                <span className="hidden sm:inline text-xs">Comprado</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingCart className="h-3 w-3" />
+                                <span className="hidden sm:inline text-xs">Comprar</span>
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
