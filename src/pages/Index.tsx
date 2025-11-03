@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Material, Movimentacao } from "@/types/material";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { StatsCard } from "@/components/StatsCard";
 import { MaterialForm } from "@/components/MaterialForm";
 import { MovementForm } from "@/components/MovementForm";
@@ -14,10 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, LogOut } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, LogOut, Settings } from "lucide-react";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { role, isAdmin } = useUserRole();
+  const navigate = useNavigate();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [movements, setMovements] = useState<Movimentacao[]>([]);
   const [loading, setLoading] = useState(true);
@@ -412,6 +416,12 @@ const Index = () => {
                 <Undo2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Devolução</span>
               </Button>
+              {isAdmin && (
+                <Button onClick={() => navigate("/settings")} variant="outline" size="sm" className="gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only sm:not-sr-only">Config</span>
+                </Button>
+              )}
               <Button onClick={signOut} variant="outline" size="sm" className="gap-2">
                 <LogOut className="h-4 w-4" />
                 <span className="sr-only sm:not-sr-only">Sair</span>

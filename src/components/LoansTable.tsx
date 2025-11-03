@@ -138,6 +138,7 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12 sm:w-20">Foto</TableHead>
             <TableHead className="min-w-[150px]">Material</TableHead>
             <TableHead className="text-center">Qtd.</TableHead>
             <TableHead className="min-w-[120px]">Responsável</TableHead>
@@ -150,7 +151,7 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
         <TableBody>
           {filteredLoans.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                 {loans.length === 0 
                   ? "Nenhum empréstimo ativo no momento"
                   : "Nenhum empréstimo encontrado com os filtros aplicados"}
@@ -159,8 +160,26 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
           ) : (
             filteredLoans.map((loan) => {
               const daysLoaned = getDaysLoaned(loan.data);
+              const material = materials.find((m) => m.id === loan.materialId);
               return (
                 <TableRow key={loan.id}>
+                  <TableCell>
+                    {material?.fotoUrl ? (
+                      <img 
+                        src={material.fotoUrl} 
+                        alt={material.descricao}
+                        className="w-8 h-8 sm:w-12 sm:h-12 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://via.placeholder.com/48?text=Sem+Foto";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 sm:w-12 sm:h-12 bg-muted rounded flex items-center justify-center">
+                        <span className="hidden sm:inline text-xs text-muted-foreground">Sem foto</span>
+                        <span className="sm:hidden text-xs">-</span>
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium text-xs sm:text-sm">{getMaterialName(loan.materialId)}</TableCell>
                   <TableCell className="text-center font-semibold text-xs sm:text-sm">{loan.quantidade}</TableCell>
                   <TableCell className="text-xs sm:text-sm">{loan.responsavel}</TableCell>

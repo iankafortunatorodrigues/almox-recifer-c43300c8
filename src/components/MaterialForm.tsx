@@ -188,11 +188,11 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       <div className="space-y-2">
         <Label htmlFor="fotoUrl">Foto do Material (opcional)</Label>
         <div className="space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
               <Label htmlFor="fotoFile" className="cursor-pointer">
-                <div className="flex items-center justify-center gap-2 h-10 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
-                  {uploadingImage ? "Carregando..." : "📁 Escolher Arquivo"}
+                <div className="flex items-center justify-center gap-2 h-10 px-2 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm">
+                  {uploadingImage ? "Carregando..." : "📁 Arquivo"}
                 </div>
               </Label>
               <Input
@@ -204,10 +204,10 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
                 disabled={uploadingImage}
               />
             </div>
-            <div className="flex-1">
+            <div>
               <Label htmlFor="fotoCamera" className="cursor-pointer">
-                <div className="flex items-center justify-center gap-2 h-10 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors">
-                  {uploadingImage ? "Carregando..." : "📷 Tirar Foto"}
+                <div className="flex items-center justify-center gap-2 h-10 px-2 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors text-xs sm:text-sm">
+                  {uploadingImage ? "Carregando..." : "📷 Câmera"}
                 </div>
               </Label>
               <Input
@@ -221,6 +221,19 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
               />
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="fotoUrlInput">Ou insira o link da imagem</Label>
+            <Input
+              id="fotoUrlInput"
+              type="url"
+              placeholder="https://exemplo.com/imagem.jpg"
+              value={formData.fotoUrl.startsWith('data:') ? '' : formData.fotoUrl}
+              onChange={(e) => setFormData({ ...formData, fotoUrl: e.target.value })}
+              disabled={uploadingImage}
+            />
+          </div>
+
           {formData.fotoUrl && (
             <div className="relative">
               <img 
@@ -240,7 +253,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Tamanho máximo: 5MB. Formatos aceitos: JPG, PNG, WEBP
+            Tamanho máximo: 5MB. Formatos: JPG, PNG, WEBP ou URL de imagem
           </p>
         </div>
       </div>
