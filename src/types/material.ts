@@ -14,7 +14,8 @@ export interface Material {
   tipo: "estoque" | "emprestimo";
   valorUnitario?: number;
   categoria?: string;
-  statusCompra?: "pendente" | "comprado";
+  statusCompra?: "pendente" | "em_cotacao" | "comprado";
+  obsoleto?: boolean;
 }
 
 export interface Movimentacao {

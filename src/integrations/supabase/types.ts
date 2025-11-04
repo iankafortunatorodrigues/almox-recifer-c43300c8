@@ -25,6 +25,7 @@ export type Database = {
           foto_url: string | null
           id: string
           localizacao: string
+          obsoleto: boolean | null
           quantidade_atual: number
           status_compra: string | null
           tipo: string
@@ -43,6 +44,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           localizacao: string
+          obsoleto?: boolean | null
           quantidade_atual?: number
           status_compra?: string | null
           tipo: string
@@ -61,6 +63,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           localizacao?: string
+          obsoleto?: boolean | null
           quantidade_atual?: number
           status_compra?: string | null
           tipo?: string

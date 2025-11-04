@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Material } from "@/types/material";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2, ShoppingCart, CheckCircle } from "lucide-react";
+import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2, ShoppingCart, CheckCircle, Clock } from "lucide-react";
 import { ImageDialog } from "@/components/ImageDialog";
 import { MaterialsFilter } from "@/components/MaterialsFilter";
 import jsPDF from "jspdf";
@@ -23,7 +23,7 @@ interface MaterialsTableProps {
   onEdit: (material: Material) => void;
   onDelete: (material: Material) => void;
   onQuickAction?: (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => void;
-  onTogglePurchase?: (material: Material) => void;
+  onTogglePurchase?: (material: Material, newStatus: "pendente" | "em_cotacao" | "comprado") => void;
   tipo: "estoque" | "emprestimo";
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -62,6 +62,10 @@ export function MaterialsTable({
   const uniqueCategories = Array.from(new Set(materials.map((m) => m.categoria).filter(Boolean))).sort() as string[];
 
   const getStockStatus = (material: Material) => {
+    // Materiais obsoletos não geram alerta
+    if (material.obsoleto) {
+      return { label: "Obsoleto", variant: "secondary" as const };
+    }
     if (material.quantidadeAtual <= material.estoqueMinimo) {
       return { label: "Crítico", variant: "destructive" as const };
     }
@@ -379,26 +383,39 @@ export function MaterialsTable({
                             <span className="hidden sm:inline text-xs">Excluir</span>
                           </Button>
                         </div>
-                        {(userRole === "admin" || userRole === "compras") && onTogglePurchase && (
-                          <Button
-                            variant={material.statusCompra === "comprado" ? "success" : "outline"}
-                            size="sm"
-                            onClick={() => onTogglePurchase(material)}
-                            className="gap-1 h-7 px-2"
-                            title={material.statusCompra === "comprado" ? "Marcar como pendente" : "Marcar como comprado"}
-                          >
-                            {material.statusCompra === "comprado" ? (
-                              <>
-                                <CheckCircle className="h-3 w-3" />
-                                <span className="hidden sm:inline text-xs">Comprado</span>
-                              </>
-                            ) : (
-                              <>
-                                <ShoppingCart className="h-3 w-3" />
-                                <span className="hidden sm:inline text-xs">Comprar</span>
-                              </>
-                            )}
-                          </Button>
+                        {(userRole === "admin" || userRole === "compras") && onTogglePurchase && !material.obsoleto && (
+                          <div className="flex gap-1">
+                            <Button
+                              variant={material.statusCompra === "pendente" ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => onTogglePurchase(material, "pendente")}
+                              className="gap-1 h-7 px-2 flex-1"
+                              title="Marcar como pendente"
+                            >
+                              <ShoppingCart className="h-3 w-3" />
+                              <span className="hidden lg:inline text-xs">Pendente</span>
+                            </Button>
+                            <Button
+                              variant={material.statusCompra === "em_cotacao" ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => onTogglePurchase(material, "em_cotacao")}
+                              className="gap-1 h-7 px-2 flex-1"
+                              title="Marcar como em cotação"
+                            >
+                              <Clock className="h-3 w-3" />
+                              <span className="hidden lg:inline text-xs">Cotação</span>
+                            </Button>
+                            <Button
+                              variant={material.statusCompra === "comprado" ? "success" : "outline"}
+                              size="sm"
+                              onClick={() => onTogglePurchase(material, "comprado")}
+                              className="gap-1 h-7 px-2 flex-1"
+                              title="Marcar como comprado"
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                              <span className="hidden lg:inline text-xs">Comprado</span>
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </TableCell>

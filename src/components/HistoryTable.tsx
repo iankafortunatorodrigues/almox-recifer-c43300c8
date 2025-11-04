@@ -36,6 +36,7 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterCategoria, setFilterCategoria] = useState("all");
+  const [filterMaterial, setFilterMaterial] = useState("");
   const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
 
   const getMaterialName = (materialId: string) => {
@@ -96,6 +97,10 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
   const filteredMovements = movements.filter((movement) => {
     if (filterType !== "all" && movement.tipo !== filterType) return false;
     if (filterResponsavel && !movement.responsavel.toLowerCase().includes(filterResponsavel.toLowerCase())) return false;
+    if (filterMaterial) {
+      const materialName = getMaterialName(movement.materialId).toLowerCase();
+      if (!materialName.includes(filterMaterial.toLowerCase())) return false;
+    }
     if (filterCategoria !== "all") {
       const material = getMaterial(movement.materialId);
       if (!material?.categoria || material.categoria !== filterCategoria) return false;
@@ -149,7 +154,7 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2 sm:gap-4">
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="text-xs sm:text-sm">
             <SelectValue placeholder="Tipo" />
@@ -176,6 +181,13 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
             ))}
           </SelectContent>
         </Select>
+
+        <Input
+          placeholder="Nome do material..."
+          className="text-xs sm:text-sm"
+          value={filterMaterial}
+          onChange={(e) => setFilterMaterial(e.target.value)}
+        />
 
         <Input
           placeholder="Responsável..."

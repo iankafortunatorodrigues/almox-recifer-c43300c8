@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, LogOut, Settings } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, LogOut, Settings2, ShoppingBag } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -76,7 +77,8 @@ const Index = () => {
       tipo: m.tipo,
       valorUnitario: m.valor_unitario ? parseFloat(m.valor_unitario) : undefined,
       categoria: m.categoria,
-      statusCompra: m.status_compra || "pendente"
+      statusCompra: m.status_compra || "pendente",
+      obsoleto: m.obsoleto || false
     }));
 
     setMaterials(materialsData);
@@ -348,10 +350,8 @@ const Index = () => {
     toast.success("Material excluído com sucesso!");
   };
 
-  const handleTogglePurchaseStatus = async (material: Material) => {
+  const handleTogglePurchaseStatus = async (material: Material, newStatus: "pendente" | "em_cotacao" | "comprado") => {
     if (!user) return;
-    
-    const newStatus = material.statusCompra === "comprado" ? "pendente" : "comprado";
     
     const { error } = await supabase
       .from("materials")
@@ -364,7 +364,12 @@ const Index = () => {
       return;
     }
 
-    toast.success(newStatus === "comprado" ? "Material marcado como comprado!" : "Material marcado como pendente");
+    const statusLabels = {
+      "pendente": "pendente",
+      "em_cotacao": "em cotação",
+      "comprado": "comprado"
+    };
+    toast.success(`Material marcado como ${statusLabels[newStatus]}!`);
     await loadMaterials();
   };
 
@@ -412,9 +417,12 @@ const Index = () => {
       <header className="border-b bg-card sticky top-0 z-10">
         <div className="px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Almoxarifado</h1>
-              <p className="text-sm text-muted-foreground">Gestão de estoque e materiais</p>
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="Recifer Logo" className="h-12 w-12 object-contain" />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold">Almoxarifado</h1>
+                <p className="text-sm text-muted-foreground">Gestão de estoque e materiais</p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <Button onClick={() => setIsAddMaterialOpen(true)} size="sm" className="gap-2 flex-1 sm:flex-none">
@@ -439,10 +447,16 @@ const Index = () => {
                 <span className="hidden sm:inline">Devolução</span>
               </Button>
               {isAdmin && (
-                <Button onClick={() => navigate("/settings")} variant="outline" size="sm" className="gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span className="sr-only sm:not-sr-only">Config</span>
-                </Button>
+                <>
+                  <Button onClick={() => navigate("/purchases")} variant="outline" size="sm" className="gap-2">
+                    <ShoppingBag className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only">Compras</span>
+                  </Button>
+                  <Button onClick={() => navigate("/settings")} variant="outline" size="sm" className="gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only">Config</span>
+                  </Button>
+                </>
               )}
               <Button onClick={signOut} variant="outline" size="sm" className="gap-2">
                 <LogOut className="h-4 w-4" />
