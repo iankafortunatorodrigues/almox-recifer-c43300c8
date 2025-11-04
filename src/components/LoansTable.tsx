@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Movimentacao, Material } from "@/types/material";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HandHelping, Undo2, Download } from "lucide-react";
+import { HandHelping, Undo2, Download, Edit, Trash2 } from "lucide-react";
 import { LoansFilter } from "@/components/LoansFilter";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -19,9 +19,12 @@ interface LoansTableProps {
   loans: Movimentacao[];
   materials: Material[];
   onReturn: (loan: Movimentacao) => void;
+  onEdit: (loan: Movimentacao) => void;
+  onDelete: (loan: Movimentacao) => void;
+  userRole?: string | null;
 }
 
-export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
+export function LoansTable({ loans, materials, onReturn, onEdit, onDelete, userRole }: LoansTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [responsibleFilter, setResponsibleFilter] = useState("all");
   const [daysFilter, setDaysFilter] = useState("all");
@@ -145,7 +148,7 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
             <TableHead className="hidden md:table-cell">Data Empréstimo</TableHead>
             <TableHead className="text-center">Dias</TableHead>
             <TableHead className="hidden lg:table-cell">Observação</TableHead>
-            <TableHead className="text-center min-w-[100px]">Ação</TableHead>
+            <TableHead className="text-center min-w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -161,13 +164,14 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
             filteredLoans.map((loan) => {
               const daysLoaned = getDaysLoaned(loan.data);
               const material = materials.find((m) => m.id === loan.materialId);
+              const canEdit = userRole === "admin";
               return (
                 <TableRow key={loan.id}>
                   <TableCell>
-                    {material?.fotoUrl ? (
+                    {loan.fotoUrl ? (
                       <img 
-                        src={material.fotoUrl} 
-                        alt={material.descricao}
+                        src={loan.fotoUrl} 
+                        alt="Material"
                         className="w-8 h-8 sm:w-12 sm:h-12 object-cover rounded"
                         onError={(e) => {
                           e.currentTarget.src = "https://via.placeholder.com/48?text=Sem+Foto";
@@ -193,15 +197,37 @@ export function LoansTable({ loans, materials, onReturn }: LoansTableProps) {
                     {loan.observacao || "-"}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onReturn(loan)}
-                      className="gap-1 h-7 px-2"
-                    >
-                      <Undo2 className="h-3 w-3" />
-                      <span className="hidden sm:inline text-xs">Devolver</span>
-                    </Button>
+                    <div className="flex gap-1 justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onReturn(loan)}
+                        className="gap-1 h-7 px-2"
+                      >
+                        <Undo2 className="h-3 w-3" />
+                        <span className="hidden sm:inline text-xs">Devolver</span>
+                      </Button>
+                      {canEdit && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(loan)}
+                            className="gap-1 h-7 px-2"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(loan)}
+                            className="gap-1 h-7 px-2"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );

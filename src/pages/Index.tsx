@@ -373,6 +373,24 @@ const Index = () => {
     await loadMaterials();
   };
 
+  const handleToggleObsolete = async (material: Material) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("materials")
+      .update({ obsoleto: !material.obsoleto })
+      .eq("id", material.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Erro ao atualizar material");
+      return;
+    }
+
+    toast.success(material.obsoleto ? "Material reativado!" : "Material marcado como obsoleto!");
+    await loadMaterials();
+  };
+
   const handleQuickAction = (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => {
     setQuickActionMaterial(material);
     setQuickActionType(action);
@@ -512,6 +530,7 @@ const Index = () => {
               onDelete={material => setDeletingMaterial(material)}
               onQuickAction={handleQuickAction}
               onTogglePurchase={handleTogglePurchaseStatus}
+              onToggleObsolete={handleToggleObsolete}
               tipo="estoque"
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -541,6 +560,7 @@ const Index = () => {
               onDelete={material => setDeletingMaterial(material)}
               onQuickAction={handleQuickAction}
               onTogglePurchase={handleTogglePurchaseStatus}
+              onToggleObsolete={handleToggleObsolete}
               tipo="emprestimo"
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -569,6 +589,9 @@ const Index = () => {
                 setQuickActionType("devolucao");
                 setIsDevolucaoOpen(true);
               }}
+              onEdit={loan => setEditingMovement(loan)}
+              onDelete={loan => setDeletingMovement(loan)}
+              userRole={role}
             />
           </TabsContent>
 

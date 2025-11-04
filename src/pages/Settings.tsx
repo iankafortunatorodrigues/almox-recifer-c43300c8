@@ -4,24 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import { ArrowLeft, UserPlus } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Settings() {
   const { isAdmin, loading } = useUserRole();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [newUserRole, setNewUserRole] = useState<"compras" | "diretor">("compras");
   const [users, setUsers] = useState<any[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [accessRequests, setAccessRequests] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -37,6 +36,7 @@ export default function Settings() {
   useEffect(() => {
     if (isAdmin) {
       loadUsers();
+      loadAccessRequests();
     }
   }, [isAdmin]);
 
@@ -50,6 +50,20 @@ export default function Settings() {
       console.error("Error loading users:", error);
     } else {
       setUsers(data || []);
+    }
+  };
+
+  const loadAccessRequests = async () => {
+    const { data, error } = await supabase
+      .from("access_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading access requests:", error);
+    } else {
+      setAccessRequests(data || []);
     }
   };
 
@@ -86,22 +100,11 @@ export default function Settings() {
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newUserEmail || !newUserPassword) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleApproveRequest = async (request: any) => {
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
+        email: request.user_email,
+        password: Math.random().toString(36).slice(-12),
         options: { emailRedirectTo: `${window.location.origin}/` }
       });
 
@@ -110,22 +113,60 @@ export default function Settings() {
       if (authData.user) {
         const { error: roleError } = await supabase
           .from("user_roles")
-          .insert({ user_id: authData.user.id, role: newUserRole });
+          .insert({ user_id: authData.user.id, role: request.requested_role });
 
         if (roleError) throw roleError;
 
+        const { error: updateError } = await supabase
+          .from("access_requests")
+          .update({ 
+            status: "approved", 
+            reviewed_by: user?.id,
+            reviewed_at: new Date().toISOString()
+          })
+          .eq("id", request.id);
+
+        if (updateError) throw updateError;
+
         toast({
-          title: "Usuário criado",
-          description: `Usuário ${newUserRole} criado com sucesso!`,
+          title: "Solicitação aprovada",
+          description: `Acesso concedido para ${request.user_email}`,
         });
 
-        setNewUserEmail("");
-        setNewUserPassword("");
         loadUsers();
+        loadAccessRequests();
       }
     } catch (error: any) {
       toast({
-        title: "Erro ao criar usuário",
+        title: "Erro ao aprovar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectRequest = async (request: any) => {
+    try {
+      const { error } = await supabase
+        .from("access_requests")
+        .update({ 
+          status: "rejected", 
+          reviewed_by: user?.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq("id", request.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitação rejeitada",
+        description: `Acesso negado para ${request.user_email}`,
+      });
+
+      loadAccessRequests();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao rejeitar",
         description: error.message,
         variant: "destructive",
       });
@@ -150,90 +191,78 @@ export default function Settings() {
           <h1 className="text-3xl font-bold">Configurações</h1>
         </div>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Alterar Senha</h2>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Digite a nova senha"
-                required
-              />
-            </div>
+        <Tabs defaultValue="password" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="password">Senha</TabsTrigger>
+            <TabsTrigger value="requests">Solicitações ({accessRequests.length})</TabsTrigger>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
+          </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirme a nova senha"
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full">
-              Alterar Senha
-            </Button>
-          </form>
-        </Card>
-
-        {isAdmin && (
-          <>
+          <TabsContent value="password">
             <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Criar Novo Usuário
-              </h2>
-              <form onSubmit={handleCreateUser} className="space-y-4">
+              <h2 className="text-xl font-semibold mb-4">Alterar Senha</h2>
+              <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="newPassword">Nova Senha</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    placeholder="usuario@email.com"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
+                    id="newPassword"
                     type="password"
-                    value={newUserPassword}
-                    onChange={(e) => setNewUserPassword(e.target.value)}
-                    placeholder="Senha forte"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite a nova senha"
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="role">Tipo de Usuário</Label>
-                  <Select value={newUserRole} onValueChange={(value: any) => setNewUserRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="compras">Compras (pode visualizar e marcar como comprado)</SelectItem>
-                      <SelectItem value="diretor">Diretor (apenas visualização)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a nova senha"
+                    required
+                  />
                 </div>
-
-                <Button type="submit" className="w-full">
-                  Criar Usuário
-                </Button>
+                <Button type="submit" className="w-full">Alterar Senha</Button>
               </form>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="requests">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Solicitações de Acesso</h2>
+              <div className="space-y-3">
+                {accessRequests.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">Nenhuma solicitação pendente</p>
+                ) : (
+                  accessRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-4 border rounded">
+                      <div>
+                        <p className="font-medium">{request.user_email}</p>
+                        <Badge variant="outline" className="mt-1">
+                          {request.requested_role === "admin" ? "Admin" :
+                           request.requested_role === "compras" ? "Compras" : "Diretoria"}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleApproveRequest(request)}>
+                          <Check className="h-4 w-4 mr-1" />
+                          Aprovar
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleRejectRequest(request)}>
+                          <X className="h-4 w-4 mr-1" />
+                          Rejeitar
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users">
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
               <div className="space-y-2">
@@ -247,8 +276,8 @@ export default function Settings() {
                 ))}
               </div>
             </Card>
-          </>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

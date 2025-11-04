@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Material } from "@/types/material";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2, ShoppingCart, CheckCircle, Clock } from "lucide-react";
+import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2, ShoppingCart, CheckCircle, Clock, XCircle } from "lucide-react";
 import { ImageDialog } from "@/components/ImageDialog";
 import { MaterialsFilter } from "@/components/MaterialsFilter";
 import jsPDF from "jspdf";
@@ -24,6 +24,7 @@ interface MaterialsTableProps {
   onDelete: (material: Material) => void;
   onQuickAction?: (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => void;
   onTogglePurchase?: (material: Material, newStatus: "pendente" | "em_cotacao" | "comprado") => void;
+  onToggleObsolete?: (material: Material) => void;
   tipo: "estoque" | "emprestimo";
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -44,6 +45,7 @@ export function MaterialsTable({
   onDelete,
   onQuickAction,
   onTogglePurchase,
+  onToggleObsolete,
   tipo,
   searchQuery,
   onSearchChange,
@@ -416,6 +418,20 @@ export function MaterialsTable({
                               <span className="hidden lg:inline text-xs">Comprado</span>
                             </Button>
                           </div>
+                        )}
+                        {userRole === "admin" && onToggleObsolete && (
+                          <Button
+                            variant={material.obsoleto ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={() => onToggleObsolete(material)}
+                            className="gap-1 h-7 px-2 w-full"
+                            title={material.obsoleto ? "Remover de obsoleto" : "Marcar como obsoleto"}
+                          >
+                            <XCircle className="h-3 w-3" />
+                            <span className="hidden lg:inline text-xs">
+                              {material.obsoleto ? "Ativar" : "Obsoleto"}
+                            </span>
+                          </Button>
                         )}
                       </div>
                     </TableCell>
