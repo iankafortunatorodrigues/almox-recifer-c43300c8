@@ -9,14 +9,14 @@ import { MaterialForm } from "@/components/MaterialForm";
 import { MovementForm } from "@/components/MovementForm";
 import { MaterialsTable } from "@/components/MaterialsTable";
 import { HistoryTable } from "@/components/HistoryTable";
-import { LoansTable } from "@/components/LoansTable";
+
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, LogOut, Settings2, ShoppingBag } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, LogOut, Settings2, ShoppingBag } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
 const Index = () => {
@@ -38,8 +38,6 @@ const Index = () => {
   const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false);
   const [isEntradaOpen, setIsEntradaOpen] = useState(false);
   const [isSaidaOpen, setIsSaidaOpen] = useState(false);
-  const [isEmprestimoOpen, setIsEmprestimoOpen] = useState(false);
-  const [isDevolucaoOpen, setIsDevolucaoOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [editingMovement, setEditingMovement] = useState<Movimentacao | null>(null);
   const [deletingMovement, setDeletingMovement] = useState<Movimentacao | null>(null);
@@ -236,12 +234,6 @@ const Index = () => {
       case "saida":
         setIsSaidaOpen(false);
         break;
-      case "emprestimo":
-        setIsEmprestimoOpen(false);
-        break;
-      case "devolucao":
-        setIsDevolucaoOpen(false);
-        break;
     }
 
     // Recarregar material para verificar estoque atualizado
@@ -407,18 +399,6 @@ const Index = () => {
   const lowStockMaterials = materials.filter(m => m.quantidadeAtual <= m.estoqueMinimo);
   const totalItems = materials.reduce((acc, m) => acc + m.quantidadeAtual, 0);
 
-  const activeLoans = movements.filter(m => {
-    if (m.tipo !== "emprestimo") return false;
-    const hasReturn = movements.some(
-      mov =>
-        mov.tipo === "devolucao" &&
-        mov.materialId === m.materialId &&
-        mov.responsavel === m.responsavel &&
-        new Date(mov.data) > new Date(m.data)
-    );
-    return !hasReturn;
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -458,14 +438,6 @@ const Index = () => {
                     <ArrowUpCircle className="h-4 w-4" />
                     <span className="hidden sm:inline">Saída</span>
                   </Button>
-                  <Button onClick={() => setIsEmprestimoOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
-                    <HandHelping className="h-4 w-4" />
-                    <span className="hidden sm:inline">Empréstimo</span>
-                  </Button>
-                  <Button onClick={() => setIsDevolucaoOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
-                    <Undo2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Devolução</span>
-                  </Button>
                 </>
               )}
               {isAdmin && (
@@ -501,7 +473,7 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="stock-materials" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-3 h-auto">
             <TabsTrigger value="stock-materials" className="text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Materiais de Estoque</span>
               <span className="sm:hidden">Estoque</span>
@@ -509,15 +481,6 @@ const Index = () => {
             <TabsTrigger value="loan-materials" className="text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Materiais de Empréstimo</span>
               <span className="sm:hidden">Empréstimo</span>
-            </TabsTrigger>
-            <TabsTrigger value="loans" className="text-xs sm:text-sm py-2">
-              <span className="hidden sm:inline">Empréstimos Ativos</span>
-              <span className="sm:hidden">Ativos</span>
-              {activeLoans.length > 0 && (
-                <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">
-                  {activeLoans.length}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
           </TabsList>
@@ -578,21 +541,6 @@ const Index = () => {
                 setLoanLocationFilter("all");
                 setLoanCategoryFilter("all");
               }}
-              userRole={role}
-            />
-          </TabsContent>
-
-          <TabsContent value="loans" className="space-y-6">
-            <LoansTable
-              loans={activeLoans}
-              materials={materials}
-              onReturn={loan => {
-                setQuickActionMaterial(materials.find(m => m.id === loan.materialId) || null);
-                setQuickActionType("devolucao");
-                setIsDevolucaoOpen(true);
-              }}
-              onEdit={loan => setEditingMovement(loan)}
-              onDelete={loan => setDeletingMovement(loan)}
               userRole={role}
             />
           </TabsContent>
@@ -691,90 +639,6 @@ const Index = () => {
             }}
             initialData={
               quickActionMaterial && quickActionType === "saida"
-                ? {
-                    materialId: quickActionMaterial.id,
-                    quantidade: 1,
-                    responsavel: "",
-                    observacao: ""
-                  }
-                : undefined
-            }
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={isEmprestimoOpen || (quickActionType === "emprestimo" && !!quickActionMaterial)}
-        onOpenChange={open => {
-          setIsEmprestimoOpen(open);
-          if (!open) {
-            setQuickActionMaterial(null);
-            setQuickActionType(null);
-          }
-        }}
-      >
-        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Registrar Empréstimo</DialogTitle>
-            <DialogDescription>Registre o empréstimo de ferramentas/materiais</DialogDescription>
-          </DialogHeader>
-          <MovementForm
-            materials={materials}
-            type="emprestimo"
-            onSubmit={data => {
-              handleMovement("emprestimo", data);
-              setQuickActionMaterial(null);
-              setQuickActionType(null);
-            }}
-            onCancel={() => {
-              setIsEmprestimoOpen(false);
-              setQuickActionMaterial(null);
-              setQuickActionType(null);
-            }}
-            initialData={
-              quickActionMaterial && quickActionType === "emprestimo"
-                ? {
-                    materialId: quickActionMaterial.id,
-                    quantidade: 1,
-                    responsavel: "",
-                    observacao: ""
-                  }
-                : undefined
-            }
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={isDevolucaoOpen || (quickActionType === "devolucao" && !!quickActionMaterial)}
-        onOpenChange={open => {
-          setIsDevolucaoOpen(open);
-          if (!open) {
-            setQuickActionMaterial(null);
-            setQuickActionType(null);
-          }
-        }}
-      >
-        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Registrar Devolução</DialogTitle>
-            <DialogDescription>Registre a devolução de ferramentas/materiais emprestados</DialogDescription>
-          </DialogHeader>
-          <MovementForm
-            materials={materials}
-            type="devolucao"
-            onSubmit={data => {
-              handleMovement("devolucao", data);
-              setQuickActionMaterial(null);
-              setQuickActionType(null);
-            }}
-            onCancel={() => {
-              setIsDevolucaoOpen(false);
-              setQuickActionMaterial(null);
-              setQuickActionType(null);
-            }}
-            initialData={
-              quickActionMaterial && quickActionType === "devolucao"
                 ? {
                     materialId: quickActionMaterial.id,
                     quantidade: 1,
