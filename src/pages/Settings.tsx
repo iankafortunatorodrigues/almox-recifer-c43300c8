@@ -23,17 +23,6 @@ export default function Settings() {
   const [accessRequests, setAccessRequests] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      toast({
-        title: "Acesso negado",
-        description: "Você não tem permissão para acessar esta página.",
-        variant: "destructive",
-      });
-      navigate("/");
-    }
-  }, [isAdmin, loading, navigate, toast]);
-
-  useEffect(() => {
     if (isAdmin) {
       loadUsers();
       loadAccessRequests();
@@ -177,10 +166,6 @@ export default function Settings() {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
 
-  if (!isAdmin) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -192,10 +177,14 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="password" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
             <TabsTrigger value="password">Senha</TabsTrigger>
-            <TabsTrigger value="requests">Solicitações ({accessRequests.length})</TabsTrigger>
-            <TabsTrigger value="users">Usuários</TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="requests">Solicitações ({accessRequests.length})</TabsTrigger>
+                <TabsTrigger value="users">Usuários</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="password">
@@ -229,8 +218,9 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="requests">
-            <Card className="p-6">
+          {isAdmin && (
+            <TabsContent value="requests">
+              <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Solicitações de Acesso</h2>
               <div className="space-y-3">
                 {accessRequests.length === 0 ? (
@@ -260,9 +250,11 @@ export default function Settings() {
                 )}
               </div>
             </Card>
-          </TabsContent>
+            </TabsContent>
+          )}
 
-          <TabsContent value="users">
+          {isAdmin && (
+            <TabsContent value="users">
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
               <div className="space-y-2">
@@ -276,7 +268,8 @@ export default function Settings() {
                 ))}
               </div>
             </Card>
-          </TabsContent>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

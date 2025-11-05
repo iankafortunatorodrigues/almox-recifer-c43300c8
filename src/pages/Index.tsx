@@ -469,17 +469,15 @@ const Index = () => {
                 </>
               )}
               {isAdmin && (
-                <>
-                  <Button onClick={() => navigate("/purchases")} variant="outline" size="sm" className="gap-2">
-                    <ShoppingBag className="h-4 w-4" />
-                    <span className="sr-only sm:not-sr-only">Compras</span>
-                  </Button>
-                  <Button onClick={() => navigate("/settings")} variant="outline" size="sm" className="gap-2">
-                    <Settings2 className="h-4 w-4" />
-                    <span className="sr-only sm:not-sr-only">Config</span>
-                  </Button>
-                </>
+                <Button onClick={() => navigate("/purchases")} variant="outline" size="sm" className="gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  <span className="sr-only sm:not-sr-only">Compras</span>
+                </Button>
               )}
+              <Button onClick={() => navigate("/settings")} variant="outline" size="sm" className="gap-2">
+                <Settings2 className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only">Config</span>
+              </Button>
               <Button onClick={signOut} variant="outline" size="sm" className="gap-2">
                 <LogOut className="h-4 w-4" />
                 <span className="sr-only sm:not-sr-only">Sair</span>
