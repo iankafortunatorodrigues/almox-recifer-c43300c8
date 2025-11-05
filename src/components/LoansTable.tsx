@@ -196,17 +196,19 @@ export function LoansTable({ loans, materials, onReturn, onEdit, onDelete, userR
                   <TableCell className="text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">
                     {loan.observacao || "-"}
                   </TableCell>
-                  <TableCell className="text-center">
+                   <TableCell className="text-center">
                     <div className="flex gap-1 justify-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onReturn(loan)}
-                        className="gap-1 h-7 px-2"
-                      >
-                        <Undo2 className="h-3 w-3" />
-                        <span className="hidden sm:inline text-xs">Devolver</span>
-                      </Button>
+                      {userRole !== "diretor" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onReturn(loan)}
+                          className="gap-1 h-7 px-2"
+                        >
+                          <Undo2 className="h-3 w-3" />
+                          <span className="hidden sm:inline text-xs">Devolver</span>
+                        </Button>
+                      )}
                       {canEdit && (
                         <>
                           <Button

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Package, Download } from "lucide-react";
+import { Package, Download, UserPlus } from "lucide-react";
+import { AccessRequestDialog } from "@/components/AccessRequestDialog";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Auth() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [showAccessRequest, setShowAccessRequest] = useState(false);
 
   useEffect(() => {
     // Verificar se o usuário já está logado
@@ -341,8 +343,24 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
+
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              onClick={() => setShowAccessRequest(true)}
+              variant="outline"
+              className="w-full"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Solicitar Acesso ao Sistema
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      <AccessRequestDialog
+        open={showAccessRequest}
+        onOpenChange={setShowAccessRequest}
+      />
     </div>
   );
 }

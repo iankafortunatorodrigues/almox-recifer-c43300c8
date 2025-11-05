@@ -312,7 +312,7 @@ export function MaterialsTable({
                           <span className="hidden sm:inline">{material.localizacao}</span>
                           <span className="sm:hidden">{material.localizacao.slice(0, 8)}...</span>
                         </Button>
-                        {onQuickAction && (
+                        {onQuickAction && userRole !== "diretor" && (
                           <div className="flex gap-1">
                             {material.tipo === "estoque" ? (
                               <>

@@ -443,27 +443,31 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Button onClick={() => setIsAddMaterialOpen(true)} size="sm" className="gap-2 flex-1 sm:flex-none">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Novo Material</span>
-                <span className="sm:hidden">Novo</span>
-              </Button>
-              <Button onClick={() => setIsEntradaOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
-                <ArrowDownCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Entrada</span>
-              </Button>
-              <Button onClick={() => setIsSaidaOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
-                <ArrowUpCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Saída</span>
-              </Button>
-              <Button onClick={() => setIsEmprestimoOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
-                <HandHelping className="h-4 w-4" />
-                <span className="hidden sm:inline">Empréstimo</span>
-              </Button>
-              <Button onClick={() => setIsDevolucaoOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
-                <Undo2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Devolução</span>
-              </Button>
+              {role !== "diretor" && (
+                <>
+                  <Button onClick={() => setIsAddMaterialOpen(true)} size="sm" className="gap-2 flex-1 sm:flex-none">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Novo Material</span>
+                    <span className="sm:hidden">Novo</span>
+                  </Button>
+                  <Button onClick={() => setIsEntradaOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
+                    <ArrowDownCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">Entrada</span>
+                  </Button>
+                  <Button onClick={() => setIsSaidaOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
+                    <ArrowUpCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">Saída</span>
+                  </Button>
+                  <Button onClick={() => setIsEmprestimoOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
+                    <HandHelping className="h-4 w-4" />
+                    <span className="hidden sm:inline">Empréstimo</span>
+                  </Button>
+                  <Button onClick={() => setIsDevolucaoOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
+                    <Undo2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Devolução</span>
+                  </Button>
+                </>
+              )}
               {isAdmin && (
                 <>
                   <Button onClick={() => navigate("/purchases")} variant="outline" size="sm" className="gap-2">
