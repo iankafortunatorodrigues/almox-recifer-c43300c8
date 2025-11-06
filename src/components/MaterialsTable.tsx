@@ -25,7 +25,7 @@ interface MaterialsTableProps {
   onQuickAction?: (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => void;
   onTogglePurchase?: (material: Material, newStatus: "pendente" | "em_cotacao" | "comprado") => void;
   onToggleObsolete?: (material: Material) => void;
-  tipo: "estoque" | "emprestimo";
+  tipo: "estoque" | "emprestimo" | "consumivel";
   searchQuery: string;
   onSearchChange: (value: string) => void;
   statusFilter: string;
@@ -335,6 +335,17 @@ export function MaterialsTable({
                                   <ArrowUpCircle className="h-3 w-3" />
                                 </Button>
                               </>
+                            ) : material.tipo === "consumivel" ? (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => onQuickAction(material, "saida")}
+                                title="Saída rápida"
+                                className="w-full h-6 px-1"
+                              >
+                                <ArrowUpCircle className="h-3 w-3" />
+                                <span className="hidden sm:inline text-xs ml-1">Saída</span>
+                              </Button>
                             ) : (
                               <>
                                 <Button

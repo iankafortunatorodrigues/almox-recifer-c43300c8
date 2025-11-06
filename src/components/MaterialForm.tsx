@@ -69,7 +69,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       estoqueMaximo: formData.estoqueMaximo ? Number(formData.estoqueMaximo) : undefined,
       unidadeMedida: formData.unidadeMedida,
       fotoUrl: formData.fotoUrl || undefined,
-      tipo: formData.tipo as "estoque" | "emprestimo",
+      tipo: formData.tipo as "estoque" | "emprestimo" | "consumivel",
       valorUnitario: formData.valorUnitario ? Number(formData.valorUnitario) : undefined,
       categoria: formData.categoria || undefined,
     });
@@ -81,7 +81,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
         <Label>Tipo de Material</Label>
         <RadioGroup
           value={formData.tipo}
-          onValueChange={(value) => setFormData({ ...formData, tipo: value as "estoque" | "emprestimo" })}
+          onValueChange={(value) => setFormData({ ...formData, tipo: value as "estoque" | "emprestimo" | "consumivel" })}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="estoque" id="estoque" />
@@ -90,6 +90,10 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="emprestimo" id="emprestimo" />
             <Label htmlFor="emprestimo" className="font-normal cursor-pointer">Material de Empréstimo</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="consumivel" id="consumivel" />
+            <Label htmlFor="consumivel" className="font-normal cursor-pointer">Material Consumível</Label>
           </div>
         </RadioGroup>
       </div>

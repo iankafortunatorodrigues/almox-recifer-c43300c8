@@ -11,7 +11,7 @@ export interface Material {
   unidadeMedida: string;
   dataCadastro: string;
   fotoUrl?: string;
-  tipo: "estoque" | "emprestimo";
+  tipo: "estoque" | "emprestimo" | "consumivel";
   valorUnitario?: number;
   categoria?: string;
   statusCompra?: "pendente" | "em_cotacao" | "comprado";

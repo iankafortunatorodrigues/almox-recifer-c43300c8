@@ -34,6 +34,9 @@ const Index = () => {
   const [loanStatusFilter, setLoanStatusFilter] = useState("all");
   const [loanLocationFilter, setLoanLocationFilter] = useState("all");
   const [loanCategoryFilter, setLoanCategoryFilter] = useState("all");
+  const [consumableStatusFilter, setConsumableStatusFilter] = useState("all");
+  const [consumableLocationFilter, setConsumableLocationFilter] = useState("all");
+  const [consumableCategoryFilter, setConsumableCategoryFilter] = useState("all");
 
   const [isAddMaterialOpen, setIsAddMaterialOpen] = useState(false);
   const [isEntradaOpen, setIsEntradaOpen] = useState(false);
@@ -396,6 +399,7 @@ const Index = () => {
 
   const stockMaterials = filteredMaterials.filter(m => m.tipo === "estoque");
   const loanMaterials = filteredMaterials.filter(m => m.tipo === "emprestimo");
+  const consumableMaterials = filteredMaterials.filter(m => m.tipo === "consumivel");
   const lowStockMaterials = materials.filter(m => m.quantidadeAtual <= m.estoqueMinimo);
   const totalItems = materials.reduce((acc, m) => acc + m.quantidadeAtual, 0);
 
@@ -473,7 +477,7 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="stock-materials" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsList className="grid w-full grid-cols-4 h-auto">
             <TabsTrigger value="stock-materials" className="text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Materiais de Estoque</span>
               <span className="sm:hidden">Estoque</span>
@@ -481,6 +485,10 @@ const Index = () => {
             <TabsTrigger value="loan-materials" className="text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Materiais de Empréstimo</span>
               <span className="sm:hidden">Empréstimo</span>
+            </TabsTrigger>
+            <TabsTrigger value="consumables" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Consumíveis</span>
+              <span className="sm:hidden">Consumíveis</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
           </TabsList>
@@ -540,6 +548,36 @@ const Index = () => {
                 setLoanStatusFilter("all");
                 setLoanLocationFilter("all");
                 setLoanCategoryFilter("all");
+              }}
+              userRole={role}
+            />
+          </TabsContent>
+
+          <TabsContent value="consumables" className="space-y-6">
+            <MaterialsTable
+              materials={consumableMaterials}
+              onViewLocation={material => {
+                toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
+              }}
+              onEdit={material => setEditingMaterial(material)}
+              onDelete={material => setDeletingMaterial(material)}
+              onQuickAction={handleQuickAction}
+              onTogglePurchase={handleTogglePurchaseStatus}
+              onToggleObsolete={handleToggleObsolete}
+              tipo="consumivel"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={consumableStatusFilter}
+              onStatusFilterChange={setConsumableStatusFilter}
+              locationFilter={consumableLocationFilter}
+              onLocationFilterChange={setConsumableLocationFilter}
+              categoryFilter={consumableCategoryFilter}
+              onCategoryFilterChange={setConsumableCategoryFilter}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setConsumableStatusFilter("all");
+                setConsumableLocationFilter("all");
+                setConsumableCategoryFilter("all");
               }}
               userRole={role}
             />
