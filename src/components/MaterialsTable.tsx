@@ -396,6 +396,20 @@ export function MaterialsTable({
                             <span className="hidden sm:inline text-xs">Excluir</span>
                           </Button>
                         </div>
+                        {userRole === "admin" && onToggleObsolete && (
+                          <Button
+                            variant={material.obsoleto ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={() => onToggleObsolete(material)}
+                            className="gap-1 h-7 px-2 w-full"
+                            title={material.obsoleto ? "Remover de obsoleto" : "Marcar como obsoleto"}
+                          >
+                            <XCircle className="h-3 w-3" />
+                            <span className="text-xs">
+                              {material.obsoleto ? "Ativar" : "Obsoleto"}
+                            </span>
+                          </Button>
+                        )}
                         {(userRole === "admin" || userRole === "compras") && onTogglePurchase && !material.obsoleto && (
                           <div className="flex gap-1">
                             <Button
@@ -429,20 +443,6 @@ export function MaterialsTable({
                               <span className="hidden lg:inline text-xs">Comprado</span>
                             </Button>
                           </div>
-                        )}
-                        {userRole === "admin" && onToggleObsolete && (
-                          <Button
-                            variant={material.obsoleto ? "secondary" : "outline"}
-                            size="sm"
-                            onClick={() => onToggleObsolete(material)}
-                            className="gap-1 h-7 px-2 w-full"
-                            title={material.obsoleto ? "Remover de obsoleto" : "Marcar como obsoleto"}
-                          >
-                            <XCircle className="h-3 w-3" />
-                            <span className="hidden lg:inline text-xs">
-                              {material.obsoleto ? "Ativar" : "Obsoleto"}
-                            </span>
-                          </Button>
                         )}
                       </div>
                     </TableCell>

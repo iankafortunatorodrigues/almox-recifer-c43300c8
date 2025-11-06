@@ -199,17 +199,48 @@ const Index = () => {
       quantidade: number;
       responsavel: string;
       observacao?: string;
+      isManualEntry?: boolean;
+      descricao?: string;
     }
   ) => {
     if (!user) return;
 
+    let finalMaterialId = movementData.materialId;
+
+    // Se for entrada manual de consumível, criar o material primeiro
+    if (movementData.isManualEntry && movementData.descricao && type === "saida") {
+      // Criar material temporário de consumo com código único
+      const codigo = `CONS-${Date.now()}`;
+      const { data: newMaterial, error: createError } = await supabase
+        .from("materials")
+        .insert({
+          user_id: user.id,
+          codigo: codigo,
+          descricao: movementData.descricao,
+          quantidade_atual: 0, // Começa com 0 pois é saída direta
+          localizacao: "Consumível",
+          estoque_minimo: 0,
+          unidade_medida: "UN",
+          tipo: "consumivel"
+        })
+        .select()
+        .single();
+
+      if (createError || !newMaterial) {
+        toast.error("Erro ao criar material de consumo");
+        return;
+      }
+
+      finalMaterialId = newMaterial.id;
+    }
+
     // O trigger do banco de dados agora valida e atualiza o estoque automaticamente
-    const material = materials.find(m => m.id === movementData.materialId);
+    const material = materials.find(m => m.id === finalMaterialId);
     const { error: movementError } = await supabase
       .from("movimentacoes")
       .insert({
         user_id: user.id,
-        material_id: movementData.materialId,
+        material_id: finalMaterialId,
         tipo: type,
         quantidade: movementData.quantidade,
         responsavel: movementData.responsavel,

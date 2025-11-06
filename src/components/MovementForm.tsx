@@ -21,6 +21,8 @@ interface MovementFormProps {
     quantidade: number;
     responsavel: string;
     observacao?: string;
+    isManualEntry?: boolean;
+    descricao?: string;
   }) => void;
   onCancel: () => void;
   initialData?: {
@@ -33,11 +35,13 @@ interface MovementFormProps {
 
 export function MovementForm({ materials, type, onSubmit, onCancel, initialData }: MovementFormProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isManualEntry, setIsManualEntry] = useState(false);
   const [formData, setFormData] = useState({
     materialId: initialData?.materialId || "",
     quantidade: initialData?.quantidade?.toString() || "",
     responsavel: initialData?.responsavel || "",
     observacao: initialData?.observacao || "",
+    descricao: "",
   });
 
   const filteredMaterials = useMemo(() => {
@@ -55,6 +59,8 @@ export function MovementForm({ materials, type, onSubmit, onCancel, initialData 
       quantidade: Number(formData.quantidade),
       responsavel: formData.responsavel,
       observacao: formData.observacao || undefined,
+      isManualEntry: isManualEntry,
+      descricao: isManualEntry ? formData.descricao : undefined,
     });
   };
 
@@ -62,57 +68,93 @@ export function MovementForm({ materials, type, onSubmit, onCancel, initialData 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="material">Material</Label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {type === "saida" && (
+        <div className="space-y-2">
+          <Label>Tipo de Saída</Label>
+          <Select 
+            value={isManualEntry ? "manual" : "cadastrado"} 
+            onValueChange={(value) => {
+              setIsManualEntry(value === "manual");
+              if (value === "manual") {
+                setFormData({ ...formData, materialId: "" });
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cadastrado">Material Cadastrado</SelectItem>
+              <SelectItem value="manual">Material de Consumo (Não Cadastrado)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {!isManualEntry ? (
+        <div className="space-y-2">
+          <Label htmlFor="material">Material</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar material por código ou descrição..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 mb-2"
+            />
+          </div>
+          <Select value={formData.materialId} onValueChange={(value) => setFormData({ ...formData, materialId: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um material" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredMaterials.length === 0 ? (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  Nenhum material encontrado
+                </div>
+              ) : (
+                filteredMaterials.map((material) => (
+                  <SelectItem key={material.id} value={material.id}>
+                    {material.codigo} - {material.descricao}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {selectedMaterial && (
+            <div className="flex gap-3 items-start p-3 bg-muted rounded-lg">
+              {selectedMaterial.fotoUrl && (
+                <img
+                  src={selectedMaterial.fotoUrl}
+                  alt={selectedMaterial.descricao}
+                  className="w-16 h-16 object-cover rounded"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://via.placeholder.com/64?text=Sem+Foto";
+                  }}
+                />
+              )}
+              <div className="flex-1 text-sm">
+                <p className="font-medium">{selectedMaterial.codigo} - {selectedMaterial.descricao}</p>
+                <p className="text-muted-foreground">
+                  Estoque: {selectedMaterial.quantidadeAtual} {selectedMaterial.unidadeMedida} | 
+                  Local: {selectedMaterial.localizacao}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="descricao">Descrição do Material</Label>
           <Input
-            placeholder="Buscar material por código ou descrição..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 mb-2"
+            id="descricao"
+            value={formData.descricao}
+            onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+            placeholder="Ex: Papel A4, Caneta azul, etc."
+            required
           />
         </div>
-        <Select value={formData.materialId} onValueChange={(value) => setFormData({ ...formData, materialId: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione um material" />
-          </SelectTrigger>
-          <SelectContent>
-            {filteredMaterials.length === 0 ? (
-              <div className="p-2 text-sm text-muted-foreground text-center">
-                Nenhum material encontrado
-              </div>
-            ) : (
-              filteredMaterials.map((material) => (
-                <SelectItem key={material.id} value={material.id}>
-                  {material.codigo} - {material.descricao}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-        {selectedMaterial && (
-          <div className="flex gap-3 items-start p-3 bg-muted rounded-lg">
-            {selectedMaterial.fotoUrl && (
-              <img
-                src={selectedMaterial.fotoUrl}
-                alt={selectedMaterial.descricao}
-                className="w-16 h-16 object-cover rounded"
-                onError={(e) => {
-                  e.currentTarget.src = "https://via.placeholder.com/64?text=Sem+Foto";
-                }}
-              />
-            )}
-            <div className="flex-1 text-sm">
-              <p className="font-medium">{selectedMaterial.codigo} - {selectedMaterial.descricao}</p>
-              <p className="text-muted-foreground">
-                Estoque: {selectedMaterial.quantidadeAtual} {selectedMaterial.unidadeMedida} | 
-                Local: {selectedMaterial.localizacao}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="quantidade">Quantidade</Label>
@@ -158,12 +200,13 @@ export function MovementForm({ materials, type, onSubmit, onCancel, initialData 
                 ? "secondary" 
                 : "destructive"
           }
+          disabled={!isManualEntry && !formData.materialId}
         >
           {initialData ? "Atualizar" : "Registrar"}{" "}
           {type === "entrada" 
             ? "Entrada" 
             : type === "saida" 
-              ? "Saída" 
+              ? isManualEntry ? "Saída de Consumo" : "Saída"
               : type === "emprestimo" 
                 ? "Empréstimo" 
                 : "Devolução"}
