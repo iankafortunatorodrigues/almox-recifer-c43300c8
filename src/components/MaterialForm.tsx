@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Material } from "@/types/material";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 
 interface MaterialFormProps {
   onSubmit: (material: Omit<Material, "id" | "dataCadastro">) => void;
@@ -24,6 +25,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
     tipo: initialData?.tipo || "estoque",
     valorUnitario: initialData?.valorUnitario?.toString() || "",
     categoria: initialData?.categoria || "",
+    obsoleto: initialData?.obsoleto || false,
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -72,6 +74,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       tipo: formData.tipo as "estoque" | "emprestimo" | "consumivel",
       valorUnitario: formData.valorUnitario ? Number(formData.valorUnitario) : undefined,
       categoria: formData.categoria || undefined,
+      obsoleto: formData.obsoleto,
     });
   };
 
@@ -272,6 +275,22 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
           placeholder="0.00"
           value={formData.valorUnitario}
           onChange={(e) => setFormData({ ...formData, valorUnitario: e.target.value })}
+        />
+      </div>
+
+      <div className="flex items-center justify-between space-x-2 p-4 border rounded-md">
+        <div className="space-y-0.5">
+          <Label htmlFor="obsoleto" className="text-base">
+            Marcar como Obsoleto
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Material não será mais usado e aparecerá com status "Obsoleto"
+          </p>
+        </div>
+        <Switch
+          id="obsoleto"
+          checked={formData.obsoleto}
+          onCheckedChange={(checked) => setFormData({ ...formData, obsoleto: checked })}
         />
       </div>
 
