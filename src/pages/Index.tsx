@@ -464,34 +464,27 @@ const Index = () => {
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               {(role === "admin" || role === "almoxarife") && (
                 <>
-                  <Button onClick={() => setIsAddMaterialOpen(true)} size="sm" className="gap-2 flex-1 sm:flex-none">
+                  <Button onClick={() => setIsAddMaterialOpen(true)} className="gap-2 flex-1 sm:flex-none">
                     <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Novo Material</span>
-                    <span className="sm:hidden">Novo</span>
+                    Novo Material
                   </Button>
-                  <Button onClick={() => setIsEntradaOpen(true)} variant="success" size="sm" className="gap-2 flex-1 sm:flex-none">
+                  <Button onClick={() => setIsEntradaOpen(true)} variant="default" className="gap-2 flex-1 sm:flex-none bg-green-600 hover:bg-green-700">
                     <ArrowDownCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Entrada</span>
+                    Entrada
                   </Button>
-                  <Button onClick={() => setIsSaidaOpen(true)} variant="destructive" size="sm" className="gap-2 flex-1 sm:flex-none">
+                  <Button onClick={() => setIsSaidaOpen(true)} variant="destructive" className="gap-2 flex-1 sm:flex-none">
                     <ArrowUpCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Saída</span>
+                    Saída
                   </Button>
                 </>
               )}
-              {(isAdmin || role === "almoxarife") && (
-                <Button onClick={() => navigate("/purchases")} variant="outline" size="sm" className="gap-2">
-                  <ShoppingBag className="h-4 w-4" />
-                  <span className="sr-only sm:not-sr-only">Compras</span>
-                </Button>
-              )}
-              <Button onClick={() => navigate("/settings")} variant="outline" size="sm" className="gap-2">
+              <Button onClick={() => navigate("/settings")} variant="outline" className="gap-2 flex-1 sm:flex-none">
                 <Settings2 className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only">Config</span>
+                Configurações
               </Button>
-              <Button onClick={signOut} variant="outline" size="sm" className="gap-2">
+              <Button onClick={signOut} variant="outline" className="gap-2 flex-1 sm:flex-none">
                 <LogOut className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only">Sair</span>
+                Sair
               </Button>
             </div>
           </div>
