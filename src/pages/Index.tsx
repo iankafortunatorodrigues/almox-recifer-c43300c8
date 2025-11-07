@@ -79,7 +79,9 @@ const Index = () => {
       valorUnitario: m.valor_unitario ? parseFloat(m.valor_unitario) : undefined,
       categoria: m.categoria,
       statusCompra: m.status_compra || "pendente",
-      obsoleto: m.obsoleto || false
+      obsoleto: m.obsoleto || false,
+      dataCompra: m.data_compra,
+      dataEntrega: m.data_entrega
     }));
 
     setMaterials(materialsData);
@@ -142,7 +144,8 @@ const Index = () => {
         foto_url: materialData.fotoUrl,
         tipo: materialData.tipo,
         valor_unitario: materialData.valorUnitario,
-        categoria: materialData.categoria
+        categoria: materialData.categoria,
+        obsoleto: materialData.obsoleto
       })
       .select()
       .single();
@@ -177,7 +180,8 @@ const Index = () => {
         foto_url: materialData.fotoUrl,
         tipo: materialData.tipo,
         valor_unitario: materialData.valorUnitario,
-        categoria: materialData.categoria
+        categoria: materialData.categoria,
+        obsoleto: materialData.obsoleto
       })
       .eq("id", editingMaterial.id)
       .eq("user_id", user.id);
@@ -458,7 +462,7 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              {role !== "diretor" && (
+              {(role === "admin" || role === "almoxarife") && (
                 <>
                   <Button onClick={() => setIsAddMaterialOpen(true)} size="sm" className="gap-2 flex-1 sm:flex-none">
                     <Plus className="h-4 w-4" />
@@ -475,7 +479,7 @@ const Index = () => {
                   </Button>
                 </>
               )}
-              {isAdmin && (
+              {(isAdmin || role === "almoxarife") && (
                 <Button onClick={() => navigate("/purchases")} variant="outline" size="sm" className="gap-2">
                   <ShoppingBag className="h-4 w-4" />
                   <span className="sr-only sm:not-sr-only">Compras</span>
@@ -520,6 +524,10 @@ const Index = () => {
             <TabsTrigger value="consumables" className="text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Consumíveis</span>
               <span className="sm:hidden">Consumíveis</span>
+            </TabsTrigger>
+            <TabsTrigger value="purchases" className="text-xs sm:text-sm py-2">
+              <ShoppingBag className="h-4 w-4 mr-1" />
+              Compras
             </TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
           </TabsList>
@@ -612,6 +620,90 @@ const Index = () => {
               }}
               userRole={role}
             />
+          </TabsContent>
+
+          <TabsContent value="purchases" className="space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Pedidos de Compras</h2>
+              <p className="text-muted-foreground">
+                Materiais com estoque baixo ou crítico que necessitam de compra
+              </p>
+              
+              <div className="grid gap-4">
+                {lowStockMaterials.map((material) => (
+                  <div key={material.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{material.codigo} - {material.descricao}</h3>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant={material.quantidadeAtual === 0 ? "destructive" : "secondary"}>
+                            Estoque: {material.quantidadeAtual} {material.unidadeMedida}
+                          </Badge>
+                          <Badge variant="outline">
+                            Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
+                          </Badge>
+                          <Badge 
+                            variant={
+                              material.statusCompra === "comprado" ? "default" :
+                              material.statusCompra === "em_cotacao" ? "secondary" :
+                              "outline"
+                            }
+                          >
+                            {material.statusCompra === "comprado" ? "Comprado" :
+                             material.statusCompra === "em_cotacao" ? "Em Cotação" :
+                             "Pendente"}
+                          </Badge>
+                        </div>
+                        {material.dataCompra && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            📅 Data de Compra: {new Date(material.dataCompra).toLocaleDateString()}
+                          </p>
+                        )}
+                        {material.dataEntrega && (
+                          <p className="text-sm text-muted-foreground">
+                            🚚 Data de Entrega: {new Date(material.dataEntrega).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                      {(role === "compras" || role === "admin" || role === "almoxarife") && (
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            if (!user) return;
+                            
+                            const { error } = await supabase
+                              .from("materials")
+                              .update({ 
+                                status_compra: "comprado",
+                                data_compra: new Date().toISOString(),
+                                data_entrega: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                              })
+                              .eq("id", material.id)
+                              .eq("user_id", user.id);
+
+                            if (error) {
+                              toast.error("Erro ao atualizar status");
+                              return;
+                            }
+
+                            toast.success("Material marcado como comprado!");
+                            await loadMaterials();
+                          }}
+                          disabled={material.statusCompra === "comprado"}
+                        >
+                          ✓ Marcar como Comprado
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {lowStockMaterials.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum material precisa de compra no momento
+                  </div>
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">

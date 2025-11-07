@@ -85,9 +85,12 @@ export function MovementForm({ materials, type, onSubmit, onCancel, initialData 
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="cadastrado">Material Cadastrado</SelectItem>
-              <SelectItem value="manual">Material de Consumo (Não Cadastrado)</SelectItem>
+              <SelectItem value="manual">Material Obsoleto ou de Consumo</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            Materiais obsoletos ou de consumo não precisam ter estoque mínimo/máximo
+          </p>
         </div>
       )}
 

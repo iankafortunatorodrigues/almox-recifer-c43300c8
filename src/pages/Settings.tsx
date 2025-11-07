@@ -190,6 +190,13 @@ export default function Settings() {
           <TabsContent value="password">
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Alterar Senha</h2>
+              <div className="mb-6 p-4 bg-muted rounded-lg">
+                <h3 className="font-medium mb-2">Suas Credenciais de Acesso</h3>
+                <div className="space-y-1 text-sm">
+                  <p><span className="font-medium">Login (Email):</span> {user?.email}</p>
+                  <p className="text-muted-foreground">Use estas credenciais para fazer login no sistema</p>
+                </div>
+              </div>
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Nova Senha</Label>
@@ -230,10 +237,11 @@ export default function Settings() {
                     <div key={request.id} className="flex items-center justify-between p-4 border rounded">
                       <div>
                         <p className="font-medium">{request.user_email}</p>
-                        <Badge variant="outline" className="mt-1">
-                          {request.requested_role === "admin" ? "Admin" :
-                           request.requested_role === "compras" ? "Compras" : "Diretoria"}
-                        </Badge>
+                         <Badge variant="outline" className="mt-1">
+                           {request.requested_role === "admin" ? "Admin" :
+                            request.requested_role === "almoxarife" ? "Almoxarife" :
+                            request.requested_role === "compras" ? "Compras" : "Diretoria"}
+                         </Badge>
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => handleApproveRequest(request)}>

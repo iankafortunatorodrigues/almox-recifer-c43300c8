@@ -16,6 +16,8 @@ export interface Material {
   categoria?: string;
   statusCompra?: "pendente" | "em_cotacao" | "comprado";
   obsoleto?: boolean;
+  dataCompra?: string;
+  dataEntrega?: string;
 }
 
 export interface Movimentacao {

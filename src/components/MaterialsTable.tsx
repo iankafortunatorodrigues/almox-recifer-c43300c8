@@ -35,7 +35,7 @@ interface MaterialsTableProps {
   categoryFilter: string;
   onCategoryFilterChange: (value: string) => void;
   onClearFilters: () => void;
-  userRole?: "admin" | "compras" | "diretor" | null;
+  userRole?: "admin" | "compras" | "diretor" | "almoxarife" | null;
 }
 
 export function MaterialsTable({ 

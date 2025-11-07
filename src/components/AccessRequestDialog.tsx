@@ -15,7 +15,7 @@ interface AccessRequestDialogProps {
 
 export function AccessRequestDialog({ open, onOpenChange }: AccessRequestDialogProps) {
   const [email, setEmail] = useState("");
-  const [requestedRole, setRequestedRole] = useState<"admin" | "compras" | "diretor">("compras");
+  const [requestedRole, setRequestedRole] = useState<"admin" | "compras" | "diretor" | "almoxarife">("almoxarife");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +39,7 @@ export function AccessRequestDialog({ open, onOpenChange }: AccessRequestDialogP
 
       toast.success("Solicitação enviada com sucesso! Aguarde a aprovação do administrador.");
       setEmail("");
-      setRequestedRole("compras");
+      setRequestedRole("almoxarife");
       onOpenChange(false);
     } catch (error: any) {
       toast.error("Erro ao enviar solicitação: " + error.message);
@@ -81,6 +81,7 @@ export function AccessRequestDialog({ open, onOpenChange }: AccessRequestDialogP
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="almoxarife">Almoxarife (acesso total)</SelectItem>
                 <SelectItem value="admin">Administrador (acesso total)</SelectItem>
                 <SelectItem value="compras">Compras (gerenciar compras)</SelectItem>
                 <SelectItem value="diretor">Diretoria (apenas visualização)</SelectItem>

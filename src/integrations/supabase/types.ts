@@ -49,6 +49,8 @@ export type Database = {
           categoria: string | null
           codigo: string
           created_at: string | null
+          data_compra: string | null
+          data_entrega: string | null
           descricao: string
           estoque_maximo: number | null
           estoque_minimo: number
@@ -68,6 +70,8 @@ export type Database = {
           categoria?: string | null
           codigo: string
           created_at?: string | null
+          data_compra?: string | null
+          data_entrega?: string | null
           descricao: string
           estoque_maximo?: number | null
           estoque_minimo?: number
@@ -87,6 +91,8 @@ export type Database = {
           categoria?: string | null
           codigo?: string
           created_at?: string | null
+          data_compra?: string | null
+          data_entrega?: string | null
           descricao?: string
           estoque_maximo?: number | null
           estoque_minimo?: number
@@ -224,9 +230,11 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_almoxarife: { Args: { _user_id: string }; Returns: boolean }
+      is_compras: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "compras" | "diretor"
+      app_role: "admin" | "compras" | "diretor" | "almoxarife"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -354,7 +362,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "compras", "diretor"],
+      app_role: ["admin", "compras", "diretor", "almoxarife"],
     },
   },
 } as const
