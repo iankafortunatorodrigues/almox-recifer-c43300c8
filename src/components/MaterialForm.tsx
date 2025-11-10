@@ -18,7 +18,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
     descricao: initialData?.descricao || "",
     quantidadeAtual: initialData?.quantidadeAtual.toString() || "",
     localizacao: initialData?.localizacao || "",
-    estoqueMinimo: initialData?.estoqueMinimo.toString() || "",
+    estoqueMinimo: initialData?.estoqueMinimo.toString() || "0",
     estoqueMaximo: initialData?.estoqueMaximo?.toString() || "",
     unidadeMedida: initialData?.unidadeMedida || "",
     fotoUrl: initialData?.fotoUrl || "",
@@ -64,7 +64,10 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
     e.preventDefault();
     
     // Para consumível e empréstimo, usar 0 como estoque mínimo e máximo
-    const estoqueMinimo = formData.tipo === "estoque" ? Number(formData.estoqueMinimo) : 0;
+    const estoqueMinimo = formData.tipo === "estoque" 
+      ? (formData.estoqueMinimo ? Number(formData.estoqueMinimo) : 0)
+      : 0;
+    
     const estoqueMaximo = formData.tipo === "estoque" && formData.estoqueMaximo 
       ? Number(formData.estoqueMaximo) 
       : undefined;
@@ -72,7 +75,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
     onSubmit({
       codigo: formData.codigo,
       descricao: formData.descricao,
-      quantidadeAtual: Number(formData.quantidadeAtual),
+      quantidadeAtual: Number(formData.quantidadeAtual) || 0,
       localizacao: formData.localizacao,
       estoqueMinimo,
       estoqueMaximo,
@@ -91,7 +94,15 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
         <Label>Tipo de Material</Label>
         <RadioGroup
           value={formData.tipo}
-          onValueChange={(value) => setFormData({ ...formData, tipo: value as "estoque" | "emprestimo" | "consumivel" })}
+          onValueChange={(value) => {
+            // Quando mudar tipo para consumível ou empréstimo, definir estoque mínimo como 0
+            const newTipo = value as "estoque" | "emprestimo" | "consumivel";
+            setFormData({ 
+              ...formData, 
+              tipo: newTipo,
+              estoqueMinimo: newTipo === "estoque" ? formData.estoqueMinimo : "0"
+            });
+          }}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="estoque" id="estoque" />

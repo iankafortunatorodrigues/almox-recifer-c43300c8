@@ -151,10 +151,11 @@ const Index = () => {
       .single();
 
     if (error) {
+      console.error("Erro ao cadastrar material:", error);
       if (error.code === "23505") {
         toast.error("Já existe um material com este código");
       } else {
-        toast.error("Erro ao cadastrar material");
+        toast.error(`Erro ao cadastrar material: ${error.message || "Erro desconhecido"}`);
       }
       return;
     }
