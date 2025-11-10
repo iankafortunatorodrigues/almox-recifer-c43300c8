@@ -455,7 +455,7 @@ const Index = () => {
         <div className="px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Recifer Logo" className="h-12 w-12 object-contain" />
+              <img src={logo} alt="Recifer Logo" className="h-20 w-20 object-contain" />
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold">Almoxarifado</h1>
                 <p className="text-sm text-muted-foreground">Gestão de estoque e materiais</p>
@@ -874,6 +874,14 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <footer className="border-t bg-card mt-8 py-4">
+        <div className="px-3 sm:px-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Criado por <span className="font-semibold">Ianka Fortunato</span> - 15/09/2025
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
