@@ -462,17 +462,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              {(role === "admin" || role === "almoxarife") && (
-                <Button onClick={() => setIsAddMaterialOpen(true)} className="gap-2 flex-1 sm:flex-none">
-                  <Plus className="h-4 w-4" />
-                  Novo Material
-                </Button>
-              )}
+              <Button onClick={() => setIsAddMaterialOpen(true)} className="gap-2 flex-1 sm:flex-none">
+                <Plus className="h-4 w-4" />
+                Novo Material
+              </Button>
               <Button 
                 onClick={() => setIsEntradaOpen(true)} 
                 variant="default" 
                 className="gap-2 flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
-                disabled={role !== "admin" && role !== "almoxarife"}
               >
                 <ArrowDownCircle className="h-4 w-4" />
                 Entrada
@@ -481,7 +478,6 @@ const Index = () => {
                 onClick={() => setIsSaidaOpen(true)} 
                 variant="destructive" 
                 className="gap-2 flex-1 sm:flex-none"
-                disabled={role !== "admin" && role !== "almoxarife"}
               >
                 <ArrowUpCircle className="h-4 w-4" />
                 Saída
