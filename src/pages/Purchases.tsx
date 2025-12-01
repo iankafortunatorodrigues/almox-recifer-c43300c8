@@ -164,63 +164,60 @@ export default function Purchases() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Código</TableHead>
-                    <TableHead>Descrição</TableHead>
+                    <TableHead>Descrição e Status</TableHead>
                     <TableHead>Categoria</TableHead>
-                    <TableHead className="text-center">Qtd. Atual</TableHead>
-                    <TableHead className="text-center">Qtd. Mínima</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
+                    <TableHead className="text-center">Ações Rápidas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendentes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         Nenhum material pendente
                       </TableCell>
                     </TableRow>
                   ) : (
                     pendentes.map((material) => (
-                      <TableRow key={material.id}>
-                        <TableCell className="font-medium">{material.codigo}</TableCell>
+                      <TableRow key={material.id} className="hover:bg-muted/50">
+                        <TableCell className="font-bold text-lg">{material.codigo}</TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div>{material.descricao}</div>
+                          <div className="space-y-2">
+                            <div className="font-medium text-base">{material.descricao}</div>
                             <div className="flex gap-2 flex-wrap">
-                              <Badge variant="outline" className="bg-background">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                                 Estoque: {material.quantidadeAtual} {material.unidadeMedida}
                               </Badge>
-                              <Badge variant="outline" className="bg-background">
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border-orange-200 dark:border-orange-800">
                                 Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
                               </Badge>
-                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                Pendente
+                              <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold">
+                                ⏱ PENDENTE
                               </Badge>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           {material.categoria ? (
-                            <Badge variant="outline">{material.categoria}</Badge>
+                            <Badge variant="outline" className="font-medium">{material.categoria}</Badge>
                           ) : "-"}
                         </TableCell>
-                        <TableCell className="text-center">{material.quantidadeAtual}</TableCell>
-                        <TableCell className="text-center">{material.estoqueMinimo}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex gap-2 justify-center">
+                        <TableCell>
+                          <div className="flex gap-2 justify-center flex-wrap">
                             <Button
-                              size="sm"
+                              size="lg"
                               variant="outline"
                               onClick={() => handleToggleStatus(material, "em_cotacao")}
-                              className="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950 dark:hover:bg-yellow-900"
+                              className="bg-yellow-100 hover:bg-yellow-200 text-yellow-900 border-yellow-300 dark:bg-yellow-900 dark:hover:bg-yellow-800 dark:text-yellow-100 font-bold min-w-[140px]"
                             >
-                              Em Cotação
+                              📋 Em Cotação
                             </Button>
                             <Button
-                              size="sm"
+                              size="lg"
                               variant="success"
                               onClick={() => handleToggleStatus(material, "comprado")}
+                              className="bg-green-600 hover:bg-green-700 text-white font-bold min-w-[140px]"
                             >
-                              Comprado
+                              ✓ Comprado
                             </Button>
                           </div>
                         </TableCell>
@@ -238,62 +235,60 @@ export default function Purchases() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Código</TableHead>
-                    <TableHead>Descrição</TableHead>
+                    <TableHead>Descrição e Status</TableHead>
                     <TableHead>Categoria</TableHead>
-                    <TableHead className="text-center">Qtd. Atual</TableHead>
-                    <TableHead className="text-center">Qtd. Mínima</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
+                    <TableHead className="text-center">Ações Rápidas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {emCotacao.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         Nenhum material em cotação
                       </TableCell>
                     </TableRow>
                   ) : (
                     emCotacao.map((material) => (
-                      <TableRow key={material.id}>
-                        <TableCell className="font-medium">{material.codigo}</TableCell>
+                      <TableRow key={material.id} className="hover:bg-muted/50">
+                        <TableCell className="font-bold text-lg">{material.codigo}</TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div>{material.descricao}</div>
+                          <div className="space-y-2">
+                            <div className="font-medium text-base">{material.descricao}</div>
                             <div className="flex gap-2 flex-wrap">
-                              <Badge variant="outline" className="bg-background">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                                 Estoque: {material.quantidadeAtual} {material.unidadeMedida}
                               </Badge>
-                              <Badge variant="outline" className="bg-background">
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border-orange-200 dark:border-orange-800">
                                 Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
                               </Badge>
-                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                Em Cotação
+                              <Badge className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold">
+                                📋 EM COTAÇÃO
                               </Badge>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           {material.categoria ? (
-                            <Badge variant="outline">{material.categoria}</Badge>
+                            <Badge variant="outline" className="font-medium">{material.categoria}</Badge>
                           ) : "-"}
                         </TableCell>
-                        <TableCell className="text-center">{material.quantidadeAtual}</TableCell>
-                        <TableCell className="text-center">{material.estoqueMinimo}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex gap-2 justify-center">
+                        <TableCell>
+                          <div className="flex gap-2 justify-center flex-wrap">
                             <Button
-                              size="sm"
+                              size="lg"
                               variant="outline"
                               onClick={() => handleToggleStatus(material, "pendente")}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 font-bold min-w-[140px]"
                             >
-                              Pendente
+                              ⏱ Pendente
                             </Button>
                             <Button
-                              size="sm"
+                              size="lg"
                               variant="success"
                               onClick={() => handleToggleStatus(material, "comprado")}
+                              className="bg-green-600 hover:bg-green-700 text-white font-bold min-w-[140px]"
                             >
-                              Comprado
+                              ✓ Comprado
                             </Button>
                           </div>
                         </TableCell>
@@ -311,55 +306,54 @@ export default function Purchases() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Código</TableHead>
-                    <TableHead>Descrição</TableHead>
+                    <TableHead>Descrição e Status</TableHead>
                     <TableHead>Categoria</TableHead>
-                    <TableHead className="text-center">Qtd. Atual</TableHead>
-                    <TableHead className="text-center">Qtd. Mínima</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
+                    <TableHead className="text-center">Ações Rápidas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {comprados.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         Nenhum material comprado
                       </TableCell>
                     </TableRow>
                   ) : (
                     comprados.map((material) => (
-                      <TableRow key={material.id}>
-                        <TableCell className="font-medium">{material.codigo}</TableCell>
+                      <TableRow key={material.id} className="hover:bg-muted/50">
+                        <TableCell className="font-bold text-lg">{material.codigo}</TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <div>{material.descricao}</div>
+                          <div className="space-y-2">
+                            <div className="font-medium text-base">{material.descricao}</div>
                             <div className="flex gap-2 flex-wrap">
-                              <Badge variant="outline" className="bg-background">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                                 Estoque: {material.quantidadeAtual} {material.unidadeMedida}
                               </Badge>
-                              <Badge variant="outline" className="bg-background">
+                              <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300 border-orange-200 dark:border-orange-800">
                                 Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
                               </Badge>
-                              <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                Comprado
+                              <Badge className="bg-green-600 hover:bg-green-700 text-white font-semibold">
+                                ✓ COMPRADO
                               </Badge>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           {material.categoria ? (
-                            <Badge variant="outline">{material.categoria}</Badge>
+                            <Badge variant="outline" className="font-medium">{material.categoria}</Badge>
                           ) : "-"}
                         </TableCell>
-                        <TableCell className="text-center">{material.quantidadeAtual}</TableCell>
-                        <TableCell className="text-center">{material.estoqueMinimo}</TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleStatus(material, "pendente")}
-                          >
-                            Marcar Pendente
-                          </Button>
+                        <TableCell>
+                          <div className="flex justify-center">
+                            <Button
+                              size="lg"
+                              variant="outline"
+                              onClick={() => handleToggleStatus(material, "pendente")}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 font-bold min-w-[160px]"
+                            >
+                              ⏱ Marcar Pendente
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
