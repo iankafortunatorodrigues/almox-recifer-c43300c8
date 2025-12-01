@@ -182,7 +182,22 @@ export default function Purchases() {
                     pendentes.map((material) => (
                       <TableRow key={material.id}>
                         <TableCell className="font-medium">{material.codigo}</TableCell>
-                        <TableCell>{material.descricao}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div>{material.descricao}</div>
+                            <div className="flex gap-2 flex-wrap">
+                              <Badge variant="outline" className="bg-background">
+                                Estoque: {material.quantidadeAtual} {material.unidadeMedida}
+                              </Badge>
+                              <Badge variant="outline" className="bg-background">
+                                Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
+                              </Badge>
+                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                Pendente
+                              </Badge>
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {material.categoria ? (
                             <Badge variant="outline">{material.categoria}</Badge>
@@ -196,8 +211,8 @@ export default function Purchases() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleToggleStatus(material, "em_cotacao")}
+                              className="bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950 dark:hover:bg-yellow-900"
                             >
-                              <Clock className="h-4 w-4 mr-1" />
                               Em Cotação
                             </Button>
                             <Button
@@ -205,7 +220,6 @@ export default function Purchases() {
                               variant="success"
                               onClick={() => handleToggleStatus(material, "comprado")}
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
                               Comprado
                             </Button>
                           </div>
@@ -242,7 +256,22 @@ export default function Purchases() {
                     emCotacao.map((material) => (
                       <TableRow key={material.id}>
                         <TableCell className="font-medium">{material.codigo}</TableCell>
-                        <TableCell>{material.descricao}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div>{material.descricao}</div>
+                            <div className="flex gap-2 flex-wrap">
+                              <Badge variant="outline" className="bg-background">
+                                Estoque: {material.quantidadeAtual} {material.unidadeMedida}
+                              </Badge>
+                              <Badge variant="outline" className="bg-background">
+                                Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
+                              </Badge>
+                              <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                Em Cotação
+                              </Badge>
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {material.categoria ? (
                             <Badge variant="outline">{material.categoria}</Badge>
@@ -257,7 +286,6 @@ export default function Purchases() {
                               variant="outline"
                               onClick={() => handleToggleStatus(material, "pendente")}
                             >
-                              <ShoppingCart className="h-4 w-4 mr-1" />
                               Pendente
                             </Button>
                             <Button
@@ -265,7 +293,6 @@ export default function Purchases() {
                               variant="success"
                               onClick={() => handleToggleStatus(material, "comprado")}
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
                               Comprado
                             </Button>
                           </div>
@@ -302,7 +329,22 @@ export default function Purchases() {
                     comprados.map((material) => (
                       <TableRow key={material.id}>
                         <TableCell className="font-medium">{material.codigo}</TableCell>
-                        <TableCell>{material.descricao}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div>{material.descricao}</div>
+                            <div className="flex gap-2 flex-wrap">
+                              <Badge variant="outline" className="bg-background">
+                                Estoque: {material.quantidadeAtual} {material.unidadeMedida}
+                              </Badge>
+                              <Badge variant="outline" className="bg-background">
+                                Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
+                              </Badge>
+                              <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                Comprado
+                              </Badge>
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {material.categoria ? (
                             <Badge variant="outline">{material.categoria}</Badge>
@@ -316,7 +358,6 @@ export default function Purchases() {
                             variant="outline"
                             onClick={() => handleToggleStatus(material, "pendente")}
                           >
-                            <ShoppingCart className="h-4 w-4 mr-1" />
                             Marcar Pendente
                           </Button>
                         </TableCell>
