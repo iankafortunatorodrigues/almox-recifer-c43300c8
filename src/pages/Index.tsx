@@ -127,6 +127,140 @@ const Index = () => {
     loadData();
   }, [user]);
 
+  // Configurar atualização em tempo real dos materiais
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('materials-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'materials',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newMaterial: Material = {
+              id: payload.new.id,
+              codigo: payload.new.codigo,
+              descricao: payload.new.descricao,
+              quantidadeAtual: payload.new.quantidade_atual,
+              localizacao: payload.new.localizacao,
+              estoqueMinimo: payload.new.estoque_minimo,
+              estoqueMaximo: payload.new.estoque_maximo,
+              unidadeMedida: payload.new.unidade_medida,
+              dataCadastro: payload.new.created_at,
+              fotoUrl: payload.new.foto_url,
+              tipo: payload.new.tipo,
+              valorUnitario: payload.new.valor_unitario ? parseFloat(payload.new.valor_unitario) : undefined,
+              categoria: payload.new.categoria,
+              statusCompra: payload.new.status_compra || "pendente",
+              obsoleto: payload.new.obsoleto || false,
+              dataCompra: payload.new.data_compra,
+              dataEntrega: payload.new.data_entrega
+            };
+            setMaterials(prev => [newMaterial, ...prev]);
+            toast.success('Material adicionado em tempo real');
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedMaterial: Material = {
+              id: payload.new.id,
+              codigo: payload.new.codigo,
+              descricao: payload.new.descricao,
+              quantidadeAtual: payload.new.quantidade_atual,
+              localizacao: payload.new.localizacao,
+              estoqueMinimo: payload.new.estoque_minimo,
+              estoqueMaximo: payload.new.estoque_maximo,
+              unidadeMedida: payload.new.unidade_medida,
+              dataCadastro: payload.new.created_at,
+              fotoUrl: payload.new.foto_url,
+              tipo: payload.new.tipo,
+              valorUnitario: payload.new.valor_unitario ? parseFloat(payload.new.valor_unitario) : undefined,
+              categoria: payload.new.categoria,
+              statusCompra: payload.new.status_compra || "pendente",
+              obsoleto: payload.new.obsoleto || false,
+              dataCompra: payload.new.data_compra,
+              dataEntrega: payload.new.data_entrega
+            };
+            setMaterials(prev => prev.map(m => m.id === updatedMaterial.id ? updatedMaterial : m));
+            toast.info('Material atualizado em tempo real');
+          } 
+          else if (payload.eventType === 'DELETE') {
+            setMaterials(prev => prev.filter(m => m.id !== payload.old.id));
+            toast.info('Material removido em tempo real');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // Configurar atualização em tempo real das movimentações
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('movements-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'movimentacoes',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Realtime movement update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newMovement: Movimentacao = {
+              id: payload.new.id,
+              materialId: payload.new.material_id,
+              tipo: payload.new.tipo,
+              quantidade: payload.new.quantidade,
+              data: payload.new.data,
+              responsavel: payload.new.responsavel,
+              observacao: payload.new.observacao,
+              fotoUrl: payload.new.foto_url
+            };
+            setMovements(prev => [newMovement, ...prev]);
+            toast.success('Movimentação registrada em tempo real');
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedMovement: Movimentacao = {
+              id: payload.new.id,
+              materialId: payload.new.material_id,
+              tipo: payload.new.tipo,
+              quantidade: payload.new.quantidade,
+              data: payload.new.data,
+              responsavel: payload.new.responsavel,
+              observacao: payload.new.observacao,
+              fotoUrl: payload.new.foto_url
+            };
+            setMovements(prev => prev.map(m => m.id === updatedMovement.id ? updatedMovement : m));
+            toast.info('Movimentação atualizada em tempo real');
+          } 
+          else if (payload.eventType === 'DELETE') {
+            setMovements(prev => prev.filter(m => m.id !== payload.old.id));
+            toast.info('Movimentação removida em tempo real');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleAddMaterial = async (materialData: Omit<Material, "id" | "dataCadastro">) => {
     if (!user) return;
 
