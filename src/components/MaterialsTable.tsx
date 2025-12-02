@@ -312,7 +312,7 @@ export function MaterialsTable({
                           <span className="hidden sm:inline">{material.localizacao}</span>
                           <span className="sm:hidden">{material.localizacao.slice(0, 8)}...</span>
                         </Button>
-                        {onQuickAction && userRole !== "diretor" && (
+                        {onQuickAction && userRole !== "diretor" && userRole !== "compras" && (
                           <div className="flex gap-1">
                             {material.tipo === "estoque" ? (
                               <>
@@ -380,7 +380,7 @@ export function MaterialsTable({
                             size="sm"
                             onClick={() => onEdit(material)}
                             className="gap-1 h-7 px-2 flex-1"
-                            disabled={userRole === "diretor"}
+                            disabled={userRole === "diretor" || userRole === "compras"}
                           >
                             <Pencil className="h-3 w-3" />
                             <span className="hidden sm:inline text-xs">Editar</span>
@@ -390,7 +390,7 @@ export function MaterialsTable({
                             size="sm"
                             onClick={() => onDelete(material)}
                             className="gap-1 h-7 px-2 flex-1"
-                            disabled={userRole === "diretor"}
+                            disabled={userRole === "diretor" || userRole === "compras"}
                           >
                             <Trash2 className="h-3 w-3" />
                             <span className="hidden sm:inline text-xs">Excluir</span>
