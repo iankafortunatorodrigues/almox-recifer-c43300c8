@@ -202,22 +202,20 @@ export default function Purchases() {
                           ) : "-"}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2 justify-center flex-wrap">
+                          <div className="flex gap-3 justify-center flex-wrap">
                             <Button
                               size="lg"
-                              variant="outline"
                               onClick={() => handleToggleStatus(material, "em_cotacao")}
-                              className="bg-yellow-100 hover:bg-yellow-200 text-yellow-900 border-yellow-300 dark:bg-yellow-900 dark:hover:bg-yellow-800 dark:text-yellow-100 font-bold min-w-[140px]"
+                              className="bg-orange-500 hover:bg-orange-600 text-white border-2 border-orange-600 font-bold min-w-[160px] h-12 text-base shadow-lg"
                             >
-                              📋 Em Cotação
+                              📋 COTAÇÃO
                             </Button>
                             <Button
                               size="lg"
-                              variant="success"
                               onClick={() => handleToggleStatus(material, "comprado")}
-                              className="bg-green-600 hover:bg-green-700 text-white font-bold min-w-[140px]"
+                              className="bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 font-bold min-w-[160px] h-12 text-base shadow-lg"
                             >
-                              ✓ Comprado
+                              ✓ COMPRADO
                             </Button>
                           </div>
                         </TableCell>
@@ -273,22 +271,21 @@ export default function Purchases() {
                           ) : "-"}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2 justify-center flex-wrap">
+                          <div className="flex gap-3 justify-center flex-wrap">
                             <Button
                               size="lg"
                               variant="outline"
                               onClick={() => handleToggleStatus(material, "pendente")}
-                              className="bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 font-bold min-w-[140px]"
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100 font-bold min-w-[140px] h-12 text-base"
                             >
                               ⏱ Pendente
                             </Button>
                             <Button
                               size="lg"
-                              variant="success"
                               onClick={() => handleToggleStatus(material, "comprado")}
-                              className="bg-green-600 hover:bg-green-700 text-white font-bold min-w-[140px]"
+                              className="bg-green-600 hover:bg-green-700 text-white border-2 border-green-700 font-bold min-w-[160px] h-12 text-base shadow-lg"
                             >
-                              ✓ Comprado
+                              ✓ COMPRADO
                             </Button>
                           </div>
                         </TableCell>
