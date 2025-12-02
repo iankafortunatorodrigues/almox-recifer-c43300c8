@@ -21,22 +21,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Purchases() {
   const { user } = useAuth();
-  const { isAdmin, loading } = useUserRole();
+  const { isAdmin, isCompras, loading } = useUserRole();
   const navigate = useNavigate();
   const [materials, setMaterials] = useState<Material[]>([]);
+  const hasAccess = isAdmin || isCompras;
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      toast.error("Acesso negado");
+    if (!loading && !hasAccess) {
+      toast.error("Acesso negado - Apenas Admin ou Compras");
       navigate("/");
     }
-  }, [isAdmin, loading, navigate]);
+  }, [hasAccess, loading, navigate]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (hasAccess) {
       loadMaterials();
     }
-  }, [isAdmin]);
+  }, [hasAccess]);
 
   const loadMaterials = async () => {
     if (!user) return;
@@ -45,6 +46,7 @@ export default function Purchases() {
       .from("materials")
       .select("*")
       .eq("user_id", user.id)
+      .eq("tipo", "estoque") // Apenas materiais de estoque
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -99,7 +101,7 @@ export default function Purchases() {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return null;
   }
 
