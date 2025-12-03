@@ -26,6 +26,13 @@ export default function Purchases() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const hasAccess = isAdmin || isCompras;
 
+  // Helper para determinar status do estoque
+  const getStockStatus = (material: Material) => {
+    if (material.quantidadeAtual === 0) return { label: "CRÍTICO", color: "bg-red-600 text-white" };
+    if (material.quantidadeAtual <= material.estoqueMinimo) return { label: "BAIXO", color: "bg-orange-500 text-white" };
+    return { label: "NORMAL", color: "bg-green-600 text-white" };
+  };
+
   useEffect(() => {
     if (!loading && !hasAccess) {
       toast.error("Acesso negado - Apenas Admin ou Compras");
@@ -34,27 +41,41 @@ export default function Purchases() {
   }, [hasAccess, loading, navigate]);
 
   useEffect(() => {
-    if (hasAccess) {
+    if (hasAccess && !loading) {
       loadMaterials();
     }
-  }, [hasAccess]);
+  }, [hasAccess, loading, isAdmin, isCompras]);
 
   const loadMaterials = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
+    // Compras vê TODOS materiais de estoque, Admin vê apenas os seus
+    let query = supabase
       .from("materials")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("tipo", "estoque") // Apenas materiais de estoque
+      .eq("tipo", "estoque")
+      .eq("obsoleto", false)
       .order("created_at", { ascending: false });
 
+    // Admin filtra por user_id, Compras vê todos
+    if (isAdmin && !isCompras) {
+      query = query.eq("user_id", user.id);
+    }
+
+    const { data, error } = await query;
+
     if (error) {
+      console.error("Erro ao carregar materiais:", error);
       toast.error("Erro ao carregar materiais");
       return;
     }
 
-    const materialsData: Material[] = (data || []).map((m: any) => ({
+    // Filtrar apenas materiais com estoque crítico (0) ou baixo (<= mínimo)
+    const filteredData = (data || []).filter((m: any) => 
+      m.quantidade_atual === 0 || m.quantidade_atual <= m.estoque_minimo
+    );
+
+    const materialsData: Material[] = filteredData.map((m: any) => ({
       id: m.id,
       codigo: m.codigo,
       descricao: m.descricao,
@@ -78,18 +99,25 @@ export default function Purchases() {
   const handleToggleStatus = async (material: Material, newStatus: "pendente" | "em_cotacao" | "comprado") => {
     if (!user) return;
 
+    // Compras pode atualizar qualquer material de estoque via RLS policy
     const { error } = await supabase
       .from("materials")
       .update({ status_compra: newStatus })
-      .eq("id", material.id)
-      .eq("user_id", user.id);
+      .eq("id", material.id);
 
     if (error) {
-      toast.error("Erro ao atualizar status");
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Erro ao atualizar status: " + error.message);
       return;
     }
 
-    toast.success(`Status atualizado para ${newStatus}`);
+    const statusLabels: Record<string, string> = {
+      pendente: "Pendente",
+      em_cotacao: "Em Cotação", 
+      comprado: "Comprado"
+    };
+
+    toast.success(`Status atualizado para ${statusLabels[newStatus]}`);
     loadMaterials();
   };
 
@@ -186,6 +214,9 @@ export default function Purchases() {
                           <div className="space-y-2">
                             <div className="font-medium text-base">{material.descricao}</div>
                             <div className="flex gap-2 flex-wrap">
+                              <Badge className={`${getStockStatus(material).color} font-bold`}>
+                                🚨 {getStockStatus(material).label}
+                              </Badge>
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                                 Estoque: {material.quantidadeAtual} {material.unidadeMedida}
                               </Badge>
@@ -255,6 +286,9 @@ export default function Purchases() {
                           <div className="space-y-2">
                             <div className="font-medium text-base">{material.descricao}</div>
                             <div className="flex gap-2 flex-wrap">
+                              <Badge className={`${getStockStatus(material).color} font-bold`}>
+                                🚨 {getStockStatus(material).label}
+                              </Badge>
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                                 Estoque: {material.quantidadeAtual} {material.unidadeMedida}
                               </Badge>
@@ -325,6 +359,9 @@ export default function Purchases() {
                           <div className="space-y-2">
                             <div className="font-medium text-base">{material.descricao}</div>
                             <div className="flex gap-2 flex-wrap">
+                              <Badge className={`${getStockStatus(material).color} font-bold`}>
+                                🚨 {getStockStatus(material).label}
+                              </Badge>
                               <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                                 Estoque: {material.quantidadeAtual} {material.unidadeMedida}
                               </Badge>
