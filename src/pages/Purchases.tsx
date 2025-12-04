@@ -7,7 +7,15 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ShoppingCart, CheckCircle, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowLeft, ShoppingCart, CheckCircle, Clock, FileDown, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -18,6 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 export default function Purchases() {
   const { user } = useAuth();
@@ -26,11 +37,16 @@ export default function Purchases() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const hasAccess = isAdmin || isCompras;
 
+  // Filtros
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockStatusFilter, setStockStatusFilter] = useState("all");
+
   // Helper para determinar status do estoque
   const getStockStatus = (material: Material) => {
-    if (material.quantidadeAtual === 0) return { label: "CRÍTICO", color: "bg-red-600 text-white" };
-    if (material.quantidadeAtual <= material.estoqueMinimo) return { label: "BAIXO", color: "bg-orange-500 text-white" };
-    return { label: "NORMAL", color: "bg-green-600 text-white" };
+    if (material.quantidadeAtual === 0) return { label: "CRÍTICO", color: "bg-red-600 text-white", value: "critical" };
+    if (material.quantidadeAtual <= material.estoqueMinimo) return { label: "BAIXO", color: "bg-orange-500 text-white", value: "low" };
+    return { label: "NORMAL", color: "bg-green-600 text-white", value: "normal" };
   };
 
   useEffect(() => {
@@ -121,9 +137,95 @@ export default function Purchases() {
     loadMaterials();
   };
 
-  const comprados = materials.filter(m => m.statusCompra === "comprado" && !m.obsoleto);
-  const emCotacao = materials.filter(m => m.statusCompra === "em_cotacao" && !m.obsoleto);
-  const pendentes = materials.filter(m => m.statusCompra === "pendente" && !m.obsoleto);
+  // Obter categorias únicas
+  const uniqueCategories = [...new Set(materials.filter(m => m.categoria).map(m => m.categoria!))].sort();
+
+  // Aplicar filtros
+  const applyFilters = (materialsList: Material[]) => {
+    return materialsList.filter(material => {
+      // Filtro de busca
+      const matchesSearch = searchQuery === "" || 
+        material.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        material.descricao.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Filtro de categoria
+      const matchesCategory = categoryFilter === "all" || material.categoria === categoryFilter;
+
+      // Filtro de status do estoque
+      const stockStatus = getStockStatus(material).value;
+      const matchesStockStatus = stockStatusFilter === "all" || stockStatus === stockStatusFilter;
+
+      return matchesSearch && matchesCategory && matchesStockStatus;
+    });
+  };
+
+  const hasActiveFilters = searchQuery !== "" || categoryFilter !== "all" || stockStatusFilter !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("all");
+    setStockStatusFilter("all");
+  };
+
+  const comprados = applyFilters(materials.filter(m => m.statusCompra === "comprado" && !m.obsoleto));
+  const emCotacao = applyFilters(materials.filter(m => m.statusCompra === "em_cotacao" && !m.obsoleto));
+  const pendentes = applyFilters(materials.filter(m => m.statusCompra === "pendente" && !m.obsoleto));
+
+  // Exportar para PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const allFilteredMaterials = [...pendentes, ...emCotacao, ...comprados];
+    
+    doc.setFontSize(18);
+    doc.text("Relatório de Compras", 14, 22);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, 14, 30);
+    doc.text(`Total: ${allFilteredMaterials.length} materiais | Pendentes: ${pendentes.length} | Em Cotação: ${emCotacao.length} | Comprados: ${comprados.length}`, 14, 36);
+
+    const tableData = allFilteredMaterials.map(m => [
+      m.codigo,
+      m.descricao.substring(0, 40) + (m.descricao.length > 40 ? "..." : ""),
+      m.quantidadeAtual.toString(),
+      m.estoqueMinimo.toString(),
+      getStockStatus(m).label,
+      m.categoria || "-",
+      m.statusCompra === "pendente" ? "Pendente" : m.statusCompra === "em_cotacao" ? "Em Cotação" : "Comprado"
+    ]);
+
+    autoTable(doc, {
+      head: [["Código", "Descrição", "Qtd", "Mín", "Status Est.", "Categoria", "Status Compra"]],
+      body: tableData,
+      startY: 42,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 64, 175] },
+    });
+
+    doc.save(`relatorio-compras-${new Date().toISOString().split("T")[0]}.pdf`);
+    toast.success("PDF exportado com sucesso!");
+  };
+
+  // Exportar para Excel
+  const exportToExcel = () => {
+    const allFilteredMaterials = [...pendentes, ...emCotacao, ...comprados];
+    
+    const excelData = allFilteredMaterials.map(m => ({
+      "Código": m.codigo,
+      "Descrição": m.descricao,
+      "Quantidade Atual": m.quantidadeAtual,
+      "Estoque Mínimo": m.estoqueMinimo,
+      "Status Estoque": getStockStatus(m).label,
+      "Categoria": m.categoria || "-",
+      "Localização": m.localizacao,
+      "Status Compra": m.statusCompra === "pendente" ? "Pendente" : m.statusCompra === "em_cotacao" ? "Em Cotação" : "Comprado",
+      "Valor Unitário": m.valorUnitario ? `R$ ${m.valorUnitario.toFixed(2)}` : "-"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Compras");
+    XLSX.writeFile(wb, `relatorio-compras-${new Date().toISOString().split("T")[0]}.xlsx`);
+    toast.success("Excel exportado com sucesso!");
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
@@ -142,6 +244,68 @@ export default function Purchases() {
           </Button>
           <h1 className="text-xl sm:text-3xl font-bold">Gestão de Compras</h1>
         </div>
+
+        {/* Filtros */}
+        <Card className="p-3 sm:p-4">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="relative md:col-span-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por código ou descrição..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              <Select value={stockStatusFilter} onValueChange={setStockStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status do estoque" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="critical">Estoque Crítico</SelectItem>
+                  <SelectItem value="low">Estoque Baixo</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="flex gap-2">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {uniqueCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar filtros">
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Botões de exportação */}
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={exportToPDF} className="gap-2">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span> PDF
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span> Excel
+              </Button>
+            </div>
+          </div>
+        </Card>
 
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Card className="p-2 sm:p-4">
