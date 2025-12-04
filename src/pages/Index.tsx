@@ -21,7 +21,7 @@ import logo from "@/assets/logo.jpg";
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { role, isAdmin } = useUserRole();
+  const { role, isAdmin, isCompras } = useUserRole();
   const navigate = useNavigate();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [movements, setMovements] = useState<Movimentacao[]>([]);
@@ -52,13 +52,18 @@ const Index = () => {
   const loadMaterials = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("materials")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    let query = supabase.from("materials").select("*");
+    
+    // Compras pode ver todos os materiais de estoque (RLS permite via policy)
+    // Outros usuários veem apenas seus próprios materiais
+    if (!isCompras) {
+      query = query.eq("user_id", user.id);
+    }
+    
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) {
+      console.log("Erro ao carregar materiais:", error);
       toast.error("Erro ao carregar materiais");
       return;
     }
@@ -125,7 +130,7 @@ const Index = () => {
     };
 
     loadData();
-  }, [user]);
+  }, [user, isCompras]);
 
   // Configurar atualização em tempo real dos materiais
   useEffect(() => {
