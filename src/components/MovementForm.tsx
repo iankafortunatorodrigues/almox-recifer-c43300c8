@@ -139,7 +139,7 @@ export function MovementForm({ materials, type, onSubmit, onCancel, initialData 
               <div className="flex-1 text-sm">
                 <p className="font-medium">{selectedMaterial.codigo} - {selectedMaterial.descricao}</p>
                 <p className="text-muted-foreground">
-                  Estoque: {selectedMaterial.quantidadeAtual} {selectedMaterial.unidadeMedida} | 
+                  Estoque: {selectedMaterial.tipo === "consumivel" ? "∞" : selectedMaterial.quantidadeAtual} {selectedMaterial.unidadeMedida} | 
                   Local: {selectedMaterial.localizacao}
                 </p>
               </div>
@@ -165,11 +165,14 @@ export function MovementForm({ materials, type, onSubmit, onCancel, initialData 
           id="quantidade"
           type="number"
           min="1"
-          max={(type === "saida" || type === "emprestimo") && selectedMaterial ? selectedMaterial.quantidadeAtual : undefined}
+          max={(type === "saida" || type === "emprestimo") && selectedMaterial && selectedMaterial.tipo !== "consumivel" ? selectedMaterial.quantidadeAtual : undefined}
           value={formData.quantidade}
           onChange={(e) => setFormData({ ...formData, quantidade: e.target.value })}
           required
         />
+        {selectedMaterial?.tipo === "consumivel" && (
+          <p className="text-xs text-muted-foreground">Material consumível - quantidade infinita disponível</p>
+        )}
       </div>
 
       <div className="space-y-2">
