@@ -68,9 +68,9 @@ export function MaterialsTable({
     if (material.obsoleto) {
       return { label: "Obsoleto", variant: "secondary" as const };
     }
-    // Consumíveis sempre têm quantidade infinita - sempre disponível
+    // Consumíveis mostram apenas "Consumível" sem status de estoque
     if (material.tipo === "consumivel") {
-      return { label: "Disponível", variant: "success" as const };
+      return { label: "Consumível", variant: "outline" as const };
     }
     if (material.quantidadeAtual <= material.estoqueMinimo) {
       return { label: "Crítico", variant: "destructive" as const };
