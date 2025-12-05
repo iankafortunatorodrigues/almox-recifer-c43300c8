@@ -68,6 +68,10 @@ export function MaterialsTable({
     if (material.obsoleto) {
       return { label: "Obsoleto", variant: "secondary" as const };
     }
+    // Consumíveis sempre têm quantidade infinita - sempre disponível
+    if (material.tipo === "consumivel") {
+      return { label: "Disponível", variant: "success" as const };
+    }
     if (material.quantidadeAtual <= material.estoqueMinimo) {
       return { label: "Crítico", variant: "destructive" as const };
     }
@@ -278,13 +282,17 @@ export function MaterialsTable({
                       )}
                     </TableCell>
                     <TableCell className="text-center font-semibold text-xs sm:text-sm">
-                      {material.quantidadeAtual} <span className="hidden sm:inline">{material.unidadeMedida}</span>
+                      {material.tipo === "consumivel" ? (
+                        <span className="text-primary" title="Quantidade infinita">∞</span>
+                      ) : (
+                        <>{material.quantidadeAtual} <span className="hidden sm:inline">{material.unidadeMedida}</span></>
+                      )}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
-                      {material.estoqueMinimo}
+                      {material.tipo === "consumivel" ? "-" : material.estoqueMinimo}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
-                      {material.estoqueMaximo}
+                      {material.tipo === "consumivel" ? "-" : material.estoqueMaximo}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-xs hidden lg:table-cell">
                       {material.valorUnitario ? `R$ ${material.valorUnitario.toFixed(2)}` : "-"}
