@@ -116,6 +116,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "materials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       movimentacoes: {
@@ -170,6 +177,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "movimentacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -219,7 +233,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_profile_view: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          nome: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          nome?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          nome?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
