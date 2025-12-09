@@ -15,27 +15,40 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
+      includeAssets: ["favicon.png", "pwa-icon-192.png", "pwa-icon-512.png"],
       manifest: {
-        name: "Sistema de Almoxarifado",
-        short_name: "Almoxarifado",
-        description: "Sistema completo para gestão de almoxarifado com controle de estoque",
-        theme_color: "#ffffff",
+        name: "Recifer - Sistema de Almoxarifado",
+        short_name: "Recifer",
+        description: "Sistema completo para gestão de almoxarifado Recifer",
+        theme_color: "#1e3a5f",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
+        start_url: "/",
         icons: [
           {
             src: "pwa-icon-192.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any"
           },
           {
             src: "pwa-icon-512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any"
+          },
+          {
+            src: "pwa-icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable"
+          },
+          {
+            src: "pwa-icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
           }
         ]
       },
