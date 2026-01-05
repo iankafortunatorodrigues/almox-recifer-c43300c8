@@ -11,12 +11,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Edit, Trash2, ArrowDownCircle, ArrowUpCircle, Search, X } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DbMaterial {
   id: string;
@@ -35,6 +42,9 @@ interface DbMaterial {
 
 export default function Materials() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categoriaFilter, setCategoriaFilter] = useState("");
+  const [localizacaoFilter, setLocalizacaoFilter] = useState("");
   const { role } = useUserRole();
   const queryClient = useQueryClient();
 
@@ -65,13 +75,46 @@ export default function Materials() {
     },
   });
 
-  const filteredMaterials = materials.filter((m) => {
-    if (!searchQuery) return true;
-    return (
-      m.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.descricao.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const categorias = useMemo(() => {
+    const unique = [...new Set(materials.map((m) => m.categoria).filter(Boolean))];
+    return unique.sort() as string[];
+  }, [materials]);
+
+  const localizacoes = useMemo(() => {
+    const unique = [...new Set(materials.map((m) => m.localizacao).filter(Boolean))];
+    return unique.sort();
+  }, [materials]);
+
+  const getStatus = (material: DbMaterial) => {
+    if (material.obsoleto) return "obsoleto";
+    if (material.quantidade_atual < material.estoque_minimo) return "critico";
+    if (material.quantidade_atual <= material.estoque_minimo * 1.2) return "baixo";
+    return "normal";
+  };
+
+  const filteredMaterials = useMemo(() => {
+    return materials.filter((m) => {
+      const matchesSearch =
+        !searchQuery ||
+        m.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        m.descricao.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus = !statusFilter || statusFilter === "all" || getStatus(m) === statusFilter;
+      const matchesCategoria = !categoriaFilter || categoriaFilter === "all" || m.categoria === categoriaFilter;
+      const matchesLocalizacao = !localizacaoFilter || localizacaoFilter === "all" || m.localizacao === localizacaoFilter;
+
+      return matchesSearch && matchesStatus && matchesCategoria && matchesLocalizacao;
+    });
+  }, [materials, searchQuery, statusFilter, categoriaFilter, localizacaoFilter]);
+
+  const hasActiveFilters = searchQuery || statusFilter || categoriaFilter || localizacaoFilter;
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("");
+    setCategoriaFilter("");
+    setLocalizacaoFilter("");
+  };
 
   const getStatusBadge = (material: DbMaterial) => {
     if (material.obsoleto) {
@@ -98,12 +141,65 @@ export default function Materials() {
       }
     >
       <div className="space-y-4">
-        <Input
-          placeholder="Buscar material..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código ou descrição..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="normal">Normal</SelectItem>
+              <SelectItem value="baixo">Baixo</SelectItem>
+              <SelectItem value="critico">Crítico</SelectItem>
+              <SelectItem value="obsoleto">Obsoleto</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {categorias.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={localizacaoFilter} onValueChange={setLocalizacaoFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Localização" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {localizacoes.map((loc) => (
+                <SelectItem key={loc} value={loc}>
+                  {loc}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="h-4 w-4 mr-1" />
+              Limpar
+            </Button>
+          )}
+        </div>
 
         <Card>
           <CardContent className="pt-6">
@@ -139,6 +235,22 @@ export default function Materials() {
                       <TableCell>{getStatusBadge(material)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Entrada"
+                          >
+                            <ArrowDownCircle className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Saída"
+                          >
+                            <ArrowUpCircle className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Edit className="h-4 w-4" />
                           </Button>
