@@ -9,10 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Check, X, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, X, UserPlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DashboardLayout } from "@/components/DashboardLayout";
 
 export default function Settings() {
   const { isAdmin, loading } = useUserRole();
@@ -243,16 +242,19 @@ export default function Settings() {
   };
 
   if (loading) {
-    return (
-      <DashboardLayout title="Configurações">
-        <div className="flex items-center justify-center h-64">Carregando...</div>
-      </DashboardLayout>
-    );
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
 
   return (
-    <DashboardLayout title="Configurações" subtitle="Gerencie usuários e configurações do sistema">
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold">Configurações</h1>
+        </div>
+
         <Tabs defaultValue="password" className="w-full">
           <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1'}`}>
             <TabsTrigger value="password" className="text-xs sm:text-sm">Senha</TabsTrigger>
@@ -420,6 +422,6 @@ export default function Settings() {
           )}
         </Tabs>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

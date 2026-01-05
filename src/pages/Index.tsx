@@ -4,20 +4,20 @@ import { Material, Movimentacao } from "@/types/material";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatsCard } from "@/components/StatsCard";
 import { MaterialForm } from "@/components/MaterialForm";
 import { MovementForm } from "@/components/MovementForm";
 import { MaterialsTable } from "@/components/MaterialsTable";
 import { HistoryTable } from "@/components/HistoryTable";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, AlertTriangle, ShoppingCart, TrendingUp, TrendingDown, DollarSign, Search, Plus, ArrowDownCircle, ArrowUpCircle, Calendar } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, LogOut, Settings2, ShoppingBag } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -54,6 +54,8 @@ const Index = () => {
 
     let query = supabase.from("materials").select("*");
     
+    // Compras pode ver todos os materiais de estoque (RLS permite via policy)
+    // Outros usuários veem apenas seus próprios materiais
     if (!isCompras) {
       query = query.eq("user_id", user.id);
     }
@@ -66,6 +68,7 @@ const Index = () => {
       return;
     }
 
+    // Converter snake_case para camelCase
     const materialsData: Material[] = (data || []).map((m: any) => ({
       id: m.id,
       codigo: m.codigo,
@@ -89,6 +92,7 @@ const Index = () => {
     setMaterials(materialsData);
   };
 
+  // Carregar movimentações do banco de dados
   const loadMovements = async () => {
     if (!user) return;
 
@@ -103,6 +107,7 @@ const Index = () => {
       return;
     }
 
+    // Converter snake_case para camelCase
     const movementsData: Movimentacao[] = (data || []).map((m: any) => ({
       id: m.id,
       materialId: m.material_id,
@@ -127,7 +132,7 @@ const Index = () => {
     loadData();
   }, [user, isCompras]);
 
-  // Realtime updates for materials
+  // Configurar atualização em tempo real dos materiais
   useEffect(() => {
     if (!user) return;
 
@@ -142,6 +147,8 @@ const Index = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('Realtime update:', payload);
+          
           if (payload.eventType === 'INSERT') {
             const newMaterial: Material = {
               id: payload.new.id,
@@ -163,6 +170,7 @@ const Index = () => {
               dataEntrega: payload.new.data_entrega
             };
             setMaterials(prev => [newMaterial, ...prev]);
+            toast.success('Material adicionado em tempo real');
           } 
           else if (payload.eventType === 'UPDATE') {
             const updatedMaterial: Material = {
@@ -185,9 +193,11 @@ const Index = () => {
               dataEntrega: payload.new.data_entrega
             };
             setMaterials(prev => prev.map(m => m.id === updatedMaterial.id ? updatedMaterial : m));
+            toast.info('Material atualizado em tempo real');
           } 
           else if (payload.eventType === 'DELETE') {
             setMaterials(prev => prev.filter(m => m.id !== payload.old.id));
+            toast.info('Material removido em tempo real');
           }
         }
       )
@@ -198,7 +208,7 @@ const Index = () => {
     };
   }, [user]);
 
-  // Realtime updates for movements
+  // Configurar atualização em tempo real das movimentações
   useEffect(() => {
     if (!user) return;
 
@@ -213,6 +223,8 @@ const Index = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('Realtime movement update:', payload);
+          
           if (payload.eventType === 'INSERT') {
             const newMovement: Movimentacao = {
               id: payload.new.id,
@@ -225,6 +237,7 @@ const Index = () => {
               fotoUrl: payload.new.foto_url
             };
             setMovements(prev => [newMovement, ...prev]);
+            toast.success('Movimentação registrada em tempo real');
           } 
           else if (payload.eventType === 'UPDATE') {
             const updatedMovement: Movimentacao = {
@@ -238,9 +251,11 @@ const Index = () => {
               fotoUrl: payload.new.foto_url
             };
             setMovements(prev => prev.map(m => m.id === updatedMovement.id ? updatedMovement : m));
+            toast.info('Movimentação atualizada em tempo real');
           } 
           else if (payload.eventType === 'DELETE') {
             setMovements(prev => prev.filter(m => m.id !== payload.old.id));
+            toast.info('Movimentação removida em tempo real');
           }
         }
       )
@@ -275,6 +290,7 @@ const Index = () => {
       .single();
 
     if (error) {
+      console.error("Erro ao cadastrar material:", error);
       if (error.code === "23505") {
         toast.error("Já existe um material com este código");
       } else {
@@ -335,7 +351,9 @@ const Index = () => {
 
     let finalMaterialId = movementData.materialId;
 
+    // Se for entrada manual de consumível, criar o material primeiro
     if (movementData.isManualEntry && movementData.descricao && type === "saida") {
+      // Criar material temporário de consumo com código único
       const codigo = `CONS-${Date.now()}`;
       const { data: newMaterial, error: createError } = await supabase
         .from("materials")
@@ -343,7 +361,7 @@ const Index = () => {
           user_id: user.id,
           codigo: codigo,
           descricao: movementData.descricao,
-          quantidade_atual: 0,
+          quantidade_atual: 0, // Começa com 0 pois é saída direta
           localizacao: "Consumível",
           estoque_minimo: 0,
           unidade_medida: "UN",
@@ -360,6 +378,7 @@ const Index = () => {
       finalMaterialId = newMaterial.id;
     }
 
+    // O trigger do banco de dados agora valida e atualiza o estoque automaticamente
     const material = materials.find(m => m.id === finalMaterialId);
     const { error: movementError } = await supabase
       .from("movimentacoes")
@@ -373,6 +392,7 @@ const Index = () => {
       });
 
     if (movementError) {
+      // Mostrar erro específico do banco de dados
       if (movementError.message.includes("Estoque insuficiente")) {
         toast.error("Estoque insuficiente para esta operação");
       } else if (movementError.message.includes("Material não encontrado")) {
@@ -394,6 +414,7 @@ const Index = () => {
         break;
     }
 
+    // Recarregar material para verificar estoque atualizado
     const { data: updatedMaterials } = await supabase
       .from("materials")
       .select("*")
@@ -401,9 +422,9 @@ const Index = () => {
       .eq("user_id", user.id)
       .single();
 
-    if (updatedMaterials && material && updatedMaterials.quantidade_atual <= material.estoqueMinimo) {
+    if (updatedMaterials && updatedMaterials.quantidade_atual <= material!.estoqueMinimo) {
       toast.warning(
-        `⚠️ Material ${material.codigo} está abaixo do estoque mínimo`
+        `⚠️ Material ${material!.codigo} está abaixo do estoque mínimo (atual: ${updatedMaterials.quantidade_atual}, mínimo: ${material!.estoqueMinimo})`
       );
     }
 
@@ -424,6 +445,7 @@ const Index = () => {
   }) => {
     if (!editingMovement || !user) return;
 
+    // O trigger do banco de dados gerencia toda a lógica de estoque
     const { error: movementError } = await supabase
       .from("movimentacoes")
       .update({
@@ -438,6 +460,8 @@ const Index = () => {
     if (movementError) {
       if (movementError.message.includes("Estoque insuficiente")) {
         toast.error("Estoque insuficiente para esta operação");
+      } else if (movementError.message.includes("Material não encontrado")) {
+        toast.error("Material não encontrado");
       } else {
         toast.error("Erro ao atualizar movimentação");
       }
@@ -452,6 +476,7 @@ const Index = () => {
   const handleDeleteMovement = async () => {
     if (!deletingMovement || !user) return;
 
+    // O trigger do banco de dados reverte automaticamente o estoque ao deletar
     const { error: movementError } = await supabase
       .from("movimentacoes")
       .delete()
@@ -471,6 +496,7 @@ const Index = () => {
   const handleDeleteMaterial = async () => {
     if (!deletingMaterial || !user) return;
 
+    // Verificar se há movimentações associadas
     const materialMovements = movements.filter(m => m.materialId === deletingMaterial.id);
     if (materialMovements.length > 0) {
       toast.error("Não é possível excluir um material com movimentações registradas");
@@ -508,7 +534,12 @@ const Index = () => {
       return;
     }
 
-    toast.success(`Status atualizado!`);
+    const statusLabels = {
+      "pendente": "pendente",
+      "em_cotacao": "em cotação",
+      "comprado": "comprado"
+    };
+    toast.success(`Material marcado como ${statusLabels[newStatus]}!`);
     await loadMaterials();
   };
 
@@ -535,7 +566,6 @@ const Index = () => {
     setQuickActionType(action);
   };
 
-  // Filtered data
   const filteredMaterials = materials.filter(
     m =>
       m.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -544,312 +574,294 @@ const Index = () => {
 
   const stockMaterials = filteredMaterials.filter(m => m.tipo === "estoque");
   const loanMaterials = filteredMaterials.filter(m => m.tipo === "emprestimo");
-  const lowStockMaterials = materials.filter(m => m.tipo === "estoque" && m.quantidadeAtual <= m.estoqueMinimo);
+  const consumableMaterials = filteredMaterials.filter(m => m.tipo === "consumivel");
+  const lowStockMaterials = materials.filter(m => m.quantidadeAtual <= m.estoqueMinimo);
   const totalItems = materials.reduce((acc, m) => acc + m.quantidadeAtual, 0);
-
-  // Monthly movements
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const monthlyMovements = movements.filter(m => {
-    const date = new Date(m.data);
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-  });
-  const entriesThisMonth = monthlyMovements.filter(m => m.tipo === "entrada").reduce((acc, m) => acc + m.quantidade, 0);
-  const exitsThisMonth = monthlyMovements.filter(m => m.tipo === "saida").reduce((acc, m) => acc + m.quantidade, 0);
-
-  // Stock value
-  const stockValue = materials.reduce((acc, m) => acc + (m.quantidadeAtual * (m.valorUnitario || 0)), 0);
-
-  // Purchases pending
-  const purchasesPending = lowStockMaterials.filter(m => m.statusCompra === "pendente").length;
-
-  const userName = user?.email?.split("@")[0] || "Usuário";
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Carregando...</p>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout
-      title="Dashboard"
-      subtitle={`Bem-vindo, ${userName}`}
-      actions={
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={() => setIsAddMaterialOpen(true)} 
-            disabled={role === "compras" || role === "diretor"}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Novo Material
-          </Button>
-          <Button 
-            onClick={() => setIsEntradaOpen(true)} 
-            variant="outline"
-            className="border-success text-success hover:bg-success hover:text-success-foreground"
-            disabled={role === "compras" || role === "diretor"}
-            size="sm"
-          >
-            <ArrowDownCircle className="h-4 w-4 mr-1" />
-            Entrada
-          </Button>
-          <Button 
-            onClick={() => setIsSaidaOpen(true)} 
-            variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            disabled={role === "compras" || role === "diretor"}
-            size="sm"
-          >
-            <ArrowUpCircle className="h-4 w-4 mr-1" />
-            Saída
-          </Button>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card sticky top-0 z-10">
+        <div className="px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="Recifer Logo" className="h-20 w-20 object-contain" />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold">Almoxarifado</h1>
+                <p className="text-sm text-muted-foreground">Gestão de estoque e materiais</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <Button onClick={() => setIsAddMaterialOpen(true)} className="gap-2 flex-1 sm:flex-none" disabled={role === "compras" || role === "diretor"}>
+                <Plus className="h-4 w-4" />
+                Novo Material
+              </Button>
+              <Button 
+                onClick={() => setIsEntradaOpen(true)} 
+                variant="default" 
+                className="gap-2 flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
+                disabled={role === "compras" || role === "diretor"}
+              >
+                <ArrowDownCircle className="h-4 w-4" />
+                Entrada
+              </Button>
+              <Button 
+                onClick={() => setIsSaidaOpen(true)} 
+                variant="destructive" 
+                className="gap-2 flex-1 sm:flex-none"
+                disabled={role === "compras" || role === "diretor"}
+              >
+                <ArrowUpCircle className="h-4 w-4" />
+                Saída
+              </Button>
+              <Button onClick={() => navigate("/settings")} variant="outline" className="gap-2 flex-1 sm:flex-none">
+                <Settings2 className="h-4 w-4" />
+                Configurações
+              </Button>
+              <Button onClick={signOut} variant="outline" className="gap-2 flex-1 sm:flex-none">
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
+            </div>
+          </div>
         </div>
-      }
-    >
-      {/* Stats Cards - Row 1 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total de Itens</p>
-                <p className="text-2xl font-bold">{totalItems.toLocaleString('pt-BR')}</p>
-              </div>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Package className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      </header>
 
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Estoque Baixo</p>
-                <p className="text-2xl font-bold text-warning">{lowStockMaterials.length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-warning" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-l-4 border-l-warning">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Empréstimos Pendentes</p>
-                <p className="text-2xl font-bold">{loanMaterials.filter(m => m.quantidadeAtual > 0).length}</p>
-              </div>
-              <div className="h-12 w-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-warning" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Compras Pendentes</p>
-                <p className="text-2xl font-bold">{purchasesPending}</p>
-              </div>
-              <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                <ShoppingCart className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats Cards - Row 2 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground mb-1">Entradas (Mês)</p>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-success" />
-              <span className="text-xl font-bold">{entriesThisMonth}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground mb-1">Saídas (Mês)</p>
-            <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-destructive" />
-              <span className="text-xl font-bold">{exitsThisMonth}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground mb-1">Valor em Estoque</p>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary" />
-              <span className="text-xl font-bold">
-                {stockValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground mb-1">Movimentações (Mês)</p>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary" />
-              <span className="text-xl font-bold">{monthlyMovements.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Materials List */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle>Materiais Disponíveis</CardTitle>
-                <span className="text-sm text-muted-foreground">{stockMaterials.length} itens</span>
-              </div>
-              <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, código ou categoria..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y max-h-[400px] overflow-y-auto">
-                {stockMaterials.slice(0, 10).map((material) => (
-                  <div
-                    key={material.id}
-                    className="flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => setEditingMaterial(material)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{material.descricao}</span>
-                        <Badge variant={material.quantidadeAtual > material.estoqueMinimo ? "default" : "destructive"} className="text-xs">
-                          {material.quantidadeAtual > material.estoqueMinimo ? "Ativo" : "Baixo"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {material.codigo} • {material.categoria || "Sem categoria"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{material.quantidadeAtual} {material.unidadeMedida}</p>
-                      <p className="text-xs text-muted-foreground">Min: {material.estoqueMinimo}</p>
-                    </div>
-                  </div>
-                ))}
-                {stockMaterials.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground">
-                    Nenhum material encontrado
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      <main className="px-3 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <StatsCard title="Total de Itens" value={totalItems} icon={Package} variant="default" />
+          <StatsCard title="Materiais Cadastrados" value={materials.length} icon={TrendingUp} variant="success" />
+          <StatsCard
+            title="Alertas de Estoque"
+            value={lowStockMaterials.length}
+            icon={AlertTriangle}
+            variant={lowStockMaterials.length > 0 ? "warning" : "default"}
+          />
+          <StatsCard title="Movimentações (mês)" value={movements.length} icon={TrendingDown} variant="default" />
         </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Low Stock Alerts */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Alertas de Estoque</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y max-h-[300px] overflow-y-auto">
-                {lowStockMaterials.slice(0, 5).map((material) => (
-                  <div key={material.id} className="p-3">
+        <Tabs defaultValue="stock-materials" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-4 h-auto">
+            <TabsTrigger value="stock-materials" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Materiais de Estoque</span>
+              <span className="sm:hidden">Estoque</span>
+            </TabsTrigger>
+            <TabsTrigger value="loan-materials" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Materiais de Empréstimo</span>
+              <span className="sm:hidden">Empréstimo</span>
+            </TabsTrigger>
+            <TabsTrigger value="consumables" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Consumíveis</span>
+              <span className="sm:hidden">Consumíveis</span>
+            </TabsTrigger>
+            <TabsTrigger value="purchases" className="text-xs sm:text-sm py-2">
+              <ShoppingBag className="h-4 w-4 mr-1" />
+              Compras
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="stock-materials" className="space-y-6">
+            <MaterialsTable
+              materials={stockMaterials}
+              onViewLocation={material => {
+                toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
+              }}
+              onEdit={material => setEditingMaterial(material)}
+              onDelete={material => setDeletingMaterial(material)}
+              onQuickAction={handleQuickAction}
+              onTogglePurchase={handleTogglePurchaseStatus}
+              onToggleObsolete={handleToggleObsolete}
+              tipo="estoque"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={stockStatusFilter}
+              onStatusFilterChange={setStockStatusFilter}
+              locationFilter={stockLocationFilter}
+              onLocationFilterChange={setStockLocationFilter}
+              categoryFilter={stockCategoryFilter}
+              onCategoryFilterChange={setStockCategoryFilter}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setStockStatusFilter("all");
+                setStockLocationFilter("all");
+                setStockCategoryFilter("all");
+              }}
+              userRole={role}
+            />
+          </TabsContent>
+
+          <TabsContent value="loan-materials" className="space-y-6">
+            <MaterialsTable
+              materials={loanMaterials}
+              onViewLocation={material => {
+                toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
+              }}
+              onEdit={material => setEditingMaterial(material)}
+              onDelete={material => setDeletingMaterial(material)}
+              onQuickAction={handleQuickAction}
+              onTogglePurchase={handleTogglePurchaseStatus}
+              onToggleObsolete={handleToggleObsolete}
+              tipo="emprestimo"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={loanStatusFilter}
+              onStatusFilterChange={setLoanStatusFilter}
+              locationFilter={loanLocationFilter}
+              onLocationFilterChange={setLoanLocationFilter}
+              categoryFilter={loanCategoryFilter}
+              onCategoryFilterChange={setLoanCategoryFilter}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setLoanStatusFilter("all");
+                setLoanLocationFilter("all");
+                setLoanCategoryFilter("all");
+              }}
+              userRole={role}
+            />
+          </TabsContent>
+
+          <TabsContent value="consumables" className="space-y-6">
+            <MaterialsTable
+              materials={consumableMaterials}
+              onViewLocation={material => {
+                toast.info(`📍 ${material.descricao} está em: ${material.localizacao}`);
+              }}
+              onEdit={material => setEditingMaterial(material)}
+              onDelete={material => setDeletingMaterial(material)}
+              onQuickAction={handleQuickAction}
+              onTogglePurchase={handleTogglePurchaseStatus}
+              onToggleObsolete={handleToggleObsolete}
+              tipo="consumivel"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={consumableStatusFilter}
+              onStatusFilterChange={setConsumableStatusFilter}
+              locationFilter={consumableLocationFilter}
+              onLocationFilterChange={setConsumableLocationFilter}
+              categoryFilter={consumableCategoryFilter}
+              onCategoryFilterChange={setConsumableCategoryFilter}
+              onClearFilters={() => {
+                setSearchQuery("");
+                setConsumableStatusFilter("all");
+                setConsumableLocationFilter("all");
+                setConsumableCategoryFilter("all");
+              }}
+              userRole={role}
+            />
+          </TabsContent>
+
+          <TabsContent value="purchases" className="space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Pedidos de Compras</h2>
+              <p className="text-muted-foreground">
+                Materiais com estoque baixo ou crítico que necessitam de compra
+              </p>
+              
+              <div className="grid gap-4">
+                {lowStockMaterials.map((material) => (
+                  <div key={material.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{material.descricao}</p>
-                        <p className="text-xs text-muted-foreground">{material.codigo}</p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg">{material.codigo} - {material.descricao}</h3>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant={material.quantidadeAtual === 0 ? "destructive" : "secondary"}>
+                            Estoque: {material.quantidadeAtual} {material.unidadeMedida}
+                          </Badge>
+                          <Badge variant="outline">
+                            Mínimo: {material.estoqueMinimo} {material.unidadeMedida}
+                          </Badge>
+                          <Badge 
+                            variant={
+                              material.statusCompra === "comprado" ? "default" :
+                              material.statusCompra === "em_cotacao" ? "secondary" :
+                              "outline"
+                            }
+                          >
+                            {material.statusCompra === "comprado" ? "Comprado" :
+                             material.statusCompra === "em_cotacao" ? "Em Cotação" :
+                             "Pendente"}
+                          </Badge>
+                        </div>
+                        {material.dataCompra && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            📅 Data de Compra: {new Date(material.dataCompra).toLocaleDateString()}
+                          </p>
+                        )}
+                        {material.dataEntrega && (
+                          <p className="text-sm text-muted-foreground">
+                            🚚 Data de Entrega: {new Date(material.dataEntrega).toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
-                      <Badge variant="outline" className="text-warning border-warning text-xs">
-                        Baixo
-                      </Badge>
+                      {(role === "compras" || role === "admin" || role === "almoxarife") && (
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            if (!user) return;
+                            
+                            const { error } = await supabase
+                              .from("materials")
+                              .update({ 
+                                status_compra: "comprado",
+                                data_compra: new Date().toISOString(),
+                                data_entrega: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                              })
+                              .eq("id", material.id)
+                              .eq("user_id", user.id);
+
+                            if (error) {
+                              toast.error("Erro ao atualizar status");
+                              return;
+                            }
+
+                            toast.success("Material marcado como comprado!");
+                            await loadMaterials();
+                          }}
+                          disabled={material.statusCompra === "comprado"}
+                        >
+                          ✓ Marcar como Comprado
+                        </Button>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Estoque: {material.quantidadeAtual} / Mín: {material.estoqueMinimo}
-                    </p>
                   </div>
                 ))}
                 {lowStockMaterials.length === 0 && (
-                  <div className="p-6 text-center text-muted-foreground text-sm">
-                    Nenhum alerta
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum material precisa de compra no momento
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </TabsContent>
 
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Atividade Recente</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y max-h-[200px] overflow-y-auto">
-                {movements.slice(0, 5).map((movement) => {
-                  const material = materials.find(m => m.id === movement.materialId);
-                  return (
-                    <div key={movement.id} className="p-3">
-                      <div className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full ${
-                          movement.tipo === 'entrada' ? 'bg-success' : 
-                          movement.tipo === 'saida' ? 'bg-destructive' : 
-                          'bg-warning'
-                        }`} />
-                        <span className="text-sm font-medium capitalize">{movement.tipo}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {material?.descricao || 'Material removido'} - {movement.quantidade} un
-                      </p>
-                    </div>
-                  );
-                })}
-                {movements.length === 0 && (
-                  <div className="p-6 text-center text-muted-foreground text-sm">
-                    Nenhuma atividade
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+          <TabsContent value="history" className="space-y-6">
+            <HistoryTable
+              movements={movements}
+              materials={materials}
+              onEdit={movement => setEditingMovement(movement)}
+              onDelete={movement => setDeletingMovement(movement)}
+            />
+          </TabsContent>
+        </Tabs>
+      </main>
 
       {/* Dialogs */}
       <Dialog open={isAddMaterialOpen} onOpenChange={setIsAddMaterialOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Material</DialogTitle>
-            <DialogDescription>Preencha as informações do material</DialogDescription>
+            <DialogDescription>Preencha as informações do material que será adicionado ao estoque</DialogDescription>
           </DialogHeader>
           <MaterialForm onSubmit={handleAddMaterial} onCancel={() => setIsAddMaterialOpen(false)} />
         </DialogContent>
@@ -868,7 +880,7 @@ const Index = () => {
         <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Entrada</DialogTitle>
-            <DialogDescription>Registre a entrada de materiais</DialogDescription>
+            <DialogDescription>Registre a entrada de materiais no almoxarifado</DialogDescription>
           </DialogHeader>
           <MovementForm
             materials={materials}
@@ -885,7 +897,12 @@ const Index = () => {
             }}
             initialData={
               quickActionMaterial && quickActionType === "entrada"
-                ? { materialId: quickActionMaterial.id, quantidade: 1, responsavel: "", observacao: "" }
+                ? {
+                    materialId: quickActionMaterial.id,
+                    quantidade: 1,
+                    responsavel: "",
+                    observacao: ""
+                  }
                 : undefined
             }
           />
@@ -905,7 +922,7 @@ const Index = () => {
         <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Saída</DialogTitle>
-            <DialogDescription>Registre a saída de materiais</DialogDescription>
+            <DialogDescription>Registre a retirada de materiais do almoxarifado</DialogDescription>
           </DialogHeader>
           <MovementForm
             materials={materials}
@@ -922,7 +939,12 @@ const Index = () => {
             }}
             initialData={
               quickActionMaterial && quickActionType === "saida"
-                ? { materialId: quickActionMaterial.id, quantidade: 1, responsavel: "", observacao: "" }
+                ? {
+                    materialId: quickActionMaterial.id,
+                    quantidade: 1,
+                    responsavel: "",
+                    observacao: ""
+                  }
                 : undefined
             }
           />
@@ -933,7 +955,7 @@ const Index = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Editar Material</DialogTitle>
-            <DialogDescription>Atualize as informações do material</DialogDescription>
+            <DialogDescription>Atualize as informações do material, incluindo a foto</DialogDescription>
           </DialogHeader>
           <MaterialForm
             initialData={editingMaterial || undefined}
@@ -947,7 +969,7 @@ const Index = () => {
         <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Movimentação</DialogTitle>
-            <DialogDescription>Atualize as informações</DialogDescription>
+            <DialogDescription>Atualize as informações da movimentação</DialogDescription>
           </DialogHeader>
           <MovementForm
             materials={materials}
@@ -964,7 +986,8 @@ const Index = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta movimentação?
+              Tem certeza que deseja excluir esta movimentação? Esta ação reverterá a quantidade no estoque e não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -979,7 +1002,12 @@ const Index = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão do material</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o material "{deletingMaterial?.descricao}"?
+              Tem certeza que deseja excluir o material "{deletingMaterial?.descricao}"? Esta ação não pode ser desfeita.
+              {movements.some(m => m.materialId === deletingMaterial?.id) && (
+                <span className="block mt-2 text-destructive font-semibold">
+                  ⚠️ Este material possui movimentações registradas e não pode ser excluído.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -988,7 +1016,15 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </DashboardLayout>
+
+      <footer className="border-t bg-card mt-8 py-4">
+        <div className="px-3 sm:px-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Criado por <span className="font-semibold">Ianka Fortunato</span> - 15/09/2025
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 };
 
