@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, LogOut, Settings2, ShoppingBag, FileBarChart } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, LogOut, Settings2, ShoppingBag, FileBarChart, ShoppingCart } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
 const Index = () => {
@@ -623,6 +623,11 @@ const Index = () => {
               >
                 <ArrowUpCircle className="h-4 w-4" />
                 Saída
+              </Button>
+              <Button onClick={() => navigate("/purchase-orders")} variant="outline" className="gap-2 flex-1 sm:flex-none bg-primary/10 hover:bg-primary/20 border-primary/30">
+                <ShoppingCart className="h-4 w-4" />
+                <span className="hidden sm:inline">Compras e Suprimentos</span>
+                <span className="sm:hidden">Compras</span>
               </Button>
               <Button onClick={() => navigate("/reports")} variant="outline" className="gap-2 flex-1 sm:flex-none">
                 <FileBarChart className="h-4 w-4" />

@@ -210,6 +210,177 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_history: {
+        Row: {
+          acao: string
+          created_at: string | null
+          id: string
+          observacao: string | null
+          pedido_id: string
+          status_anterior: string | null
+          status_novo: string | null
+          usuario_id: string
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          id?: string
+          observacao?: string | null
+          pedido_id: string
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id: string
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          id?: string
+          observacao?: string | null
+          pedido_id?: string
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_history_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_items: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          descricao: string
+          id: string
+          pedido_id: string
+          quantidade: number
+          unidade: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          descricao: string
+          id?: string
+          pedido_id: string
+          quantidade?: number
+          unidade?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          pedido_id?: string
+          quantidade?: number
+          unidade?: string
+          valor_estimado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          aprovador_id: string | null
+          centro_custo: string
+          created_at: string | null
+          data_necessidade: string | null
+          id: string
+          justificativa: string | null
+          numero_pedido: string
+          observacao: string | null
+          solicitante_id: string
+          status: Database["public"]["Enums"]["purchase_status"]
+          updated_at: string | null
+          urgencia: Database["public"]["Enums"]["purchase_urgency"]
+        }
+        Insert: {
+          aprovador_id?: string | null
+          centro_custo: string
+          created_at?: string | null
+          data_necessidade?: string | null
+          id?: string
+          justificativa?: string | null
+          numero_pedido?: string
+          observacao?: string | null
+          solicitante_id: string
+          status?: Database["public"]["Enums"]["purchase_status"]
+          updated_at?: string | null
+          urgencia?: Database["public"]["Enums"]["purchase_urgency"]
+        }
+        Update: {
+          aprovador_id?: string | null
+          centro_custo?: string
+          created_at?: string | null
+          data_necessidade?: string | null
+          id?: string
+          justificativa?: string | null
+          numero_pedido?: string
+          observacao?: string | null
+          solicitante_id?: string
+          status?: Database["public"]["Enums"]["purchase_status"]
+          updated_at?: string | null
+          urgencia?: Database["public"]["Enums"]["purchase_urgency"]
+        }
+        Relationships: []
+      }
+      purchase_quotations: {
+        Row: {
+          arquivo_url: string | null
+          created_at: string | null
+          fornecedor: string
+          id: string
+          observacao: string | null
+          pedido_id: string
+          selecionada: boolean | null
+          validade: string | null
+          valor_total: number
+        }
+        Insert: {
+          arquivo_url?: string | null
+          created_at?: string | null
+          fornecedor: string
+          id?: string
+          observacao?: string | null
+          pedido_id: string
+          selecionada?: boolean | null
+          validade?: string | null
+          valor_total: number
+        }
+        Update: {
+          arquivo_url?: string | null
+          created_at?: string | null
+          fornecedor?: string
+          id?: string
+          observacao?: string | null
+          pedido_id?: string
+          selecionada?: boolean | null
+          validade?: string | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_quotations_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -266,9 +437,17 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_almoxarife: { Args: { _user_id: string }; Returns: boolean }
       is_compras: { Args: { _user_id: string }; Returns: boolean }
+      is_diretor: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "compras" | "diretor" | "almoxarife"
+      purchase_status:
+        | "pedido"
+        | "cotacao"
+        | "aprovacao"
+        | "comprado"
+        | "cancelado"
+      purchase_urgency: "baixa" | "normal" | "alta" | "critica"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -397,6 +576,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "compras", "diretor", "almoxarife"],
+      purchase_status: [
+        "pedido",
+        "cotacao",
+        "aprovacao",
+        "comprado",
+        "cancelado",
+      ],
+      purchase_urgency: ["baixa", "normal", "alta", "critica"],
     },
   },
 } as const
