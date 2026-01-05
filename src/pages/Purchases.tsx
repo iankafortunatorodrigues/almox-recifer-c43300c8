@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ShoppingCart, CheckCircle, Clock, FileDown, X, Search } from "lucide-react";
+import { ShoppingCart, CheckCircle, Clock, FileDown, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 export default function Purchases() {
   const { user } = useAuth();
@@ -228,7 +229,11 @@ export default function Purchases() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+    return (
+      <DashboardLayout title="Gestão de Compras">
+        <div className="flex items-center justify-center h-64">Carregando...</div>
+      </DashboardLayout>
+    );
   }
 
   if (!hasAccess) {
@@ -236,73 +241,68 @@ export default function Purchases() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
+    <DashboardLayout 
+      title="Gestão de Compras" 
+      subtitle="Gerencie materiais com estoque baixo ou crítico"
+      actions={
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportToPDF} className="gap-2">
+            <FileDown className="h-4 w-4" />
+            PDF
           </Button>
-          <h1 className="text-xl sm:text-3xl font-bold">Gestão de Compras</h1>
+          <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2">
+            <FileDown className="h-4 w-4" />
+            Excel
+          </Button>
         </div>
+      }
+    >
+      <div className="space-y-4 sm:space-y-6">
 
         {/* Filtros */}
         <Card className="p-3 sm:p-4">
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="relative md:col-span-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por código ou descrição..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por código ou descrição..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-              <Select value={stockStatusFilter} onValueChange={setStockStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status do estoque" />
+            <Select value={stockStatusFilter} onValueChange={setStockStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status do estoque" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="critical">Estoque Crítico</SelectItem>
+                <SelectItem value="low">Estoque Baixo</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="critical">Estoque Crítico</SelectItem>
-                  <SelectItem value="low">Estoque Baixo</SelectItem>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  {uniqueCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
-              <div className="flex gap-2">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
-                    {uniqueCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {hasActiveFilters && (
-                  <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar filtros">
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Botões de exportação */}
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={exportToPDF} className="gap-2">
-                <FileDown className="h-4 w-4" />
-                <span className="hidden sm:inline">Exportar</span> PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2">
-                <FileDown className="h-4 w-4" />
-                <span className="hidden sm:inline">Exportar</span> Excel
-              </Button>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar filtros">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -561,6 +561,6 @@ export default function Purchases() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
