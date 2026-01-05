@@ -24,6 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { QuickMovementDialog } from "@/components/QuickMovementDialog";
+import { EditMaterialDialog } from "@/components/EditMaterialDialog";
+import { NewMaterialDialog } from "@/components/NewMaterialDialog";
 
 interface DbMaterial {
   id: string;
@@ -45,6 +58,16 @@ export default function Materials() {
   const [statusFilter, setStatusFilter] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState("");
   const [localizacaoFilter, setLocalizacaoFilter] = useState("");
+  
+  // Dialog states
+  const [movementDialogOpen, setMovementDialogOpen] = useState(false);
+  const [movementType, setMovementType] = useState<"entrada" | "saida">("entrada");
+  const [selectedMaterial, setSelectedMaterial] = useState<DbMaterial | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [materialToDelete, setMaterialToDelete] = useState<DbMaterial | null>(null);
+  
   const { role } = useUserRole();
   const queryClient = useQueryClient();
 
@@ -61,6 +84,107 @@ export default function Materials() {
     },
   });
 
+  // Movement mutation
+  const movementMutation = useMutation({
+    mutationFn: async (data: {
+      materialId: string;
+      quantidade: number;
+      responsavel: string;
+      observacao?: string;
+      tipo: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase.from("movimentacoes").insert({
+        material_id: data.materialId,
+        quantidade: data.quantidade,
+        responsavel: data.responsavel,
+        observacao: data.observacao,
+        tipo: data.tipo,
+        user_id: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      queryClient.invalidateQueries({ queryKey: ["movements"] });
+      toast.success(
+        variables.tipo === "entrada"
+          ? "Entrada registrada com sucesso!"
+          : "Saída registrada com sucesso!"
+      );
+      setMovementDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao registrar movimentação");
+    },
+  });
+
+  // Update material mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<DbMaterial>) => {
+      const { error } = await supabase
+        .from("materials")
+        .update({
+          codigo: data.codigo,
+          descricao: data.descricao,
+          localizacao: data.localizacao,
+          estoque_minimo: data.estoque_minimo,
+          estoque_maximo: data.estoque_maximo,
+          unidade_medida: data.unidade_medida,
+          categoria: data.categoria,
+          valor_unitario: data.valor_unitario,
+          obsoleto: data.obsoleto,
+        })
+        .eq("id", data.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      toast.success("Material atualizado com sucesso!");
+      setEditDialogOpen(false);
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar material");
+    },
+  });
+
+  // Create material mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: {
+      codigo: string;
+      descricao: string;
+      quantidade_atual: number;
+      localizacao: string;
+      estoque_minimo: number;
+      estoque_maximo: number | null;
+      unidade_medida: string;
+      categoria: string | null;
+      valor_unitario: number | null;
+      tipo: string;
+      obsoleto: boolean;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase.from("materials").insert({
+        ...data,
+        user_id: user.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      toast.success("Material cadastrado com sucesso!");
+      setNewDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Erro ao cadastrar material");
+    },
+  });
+
+  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("materials").delete().eq("id", id);
@@ -69,6 +193,8 @@ export default function Materials() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials"] });
       toast.success("Material excluído com sucesso!");
+      setDeleteDialogOpen(false);
+      setMaterialToDelete(null);
     },
     onError: () => {
       toast.error("Erro ao excluir material");
@@ -129,12 +255,28 @@ export default function Materials() {
     return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Normal</Badge>;
   };
 
+  const handleMovement = (material: DbMaterial, tipo: "entrada" | "saida") => {
+    setSelectedMaterial(material);
+    setMovementType(tipo);
+    setMovementDialogOpen(true);
+  };
+
+  const handleEdit = (material: DbMaterial) => {
+    setSelectedMaterial(material);
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (material: DbMaterial) => {
+    setMaterialToDelete(material);
+    setDeleteDialogOpen(true);
+  };
+
   return (
     <DashboardLayout
       title="Materiais de Estoque"
       subtitle="Gerencie os materiais do almoxarifado"
       actions={
-        <Button>
+        <Button onClick={() => setNewDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Material
         </Button>
@@ -240,6 +382,7 @@ export default function Materials() {
                             size="icon" 
                             className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                             title="Entrada"
+                            onClick={() => handleMovement(material, "entrada")}
                           >
                             <ArrowDownCircle className="h-4 w-4" />
                           </Button>
@@ -248,10 +391,18 @@ export default function Materials() {
                             size="icon" 
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             title="Saída"
+                            onClick={() => handleMovement(material, "saida")}
+                            disabled={material.quantidade_atual === 0}
                           >
                             <ArrowUpCircle className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            title="Editar"
+                            onClick={() => handleEdit(material)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           {role === "admin" && (
@@ -259,7 +410,8 @@ export default function Materials() {
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-destructive"
-                              onClick={() => deleteMutation.mutate(material.id)}
+                              title="Excluir"
+                              onClick={() => handleDelete(material)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -281,6 +433,61 @@ export default function Materials() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Movement Dialog */}
+      <QuickMovementDialog
+        open={movementDialogOpen}
+        onOpenChange={setMovementDialogOpen}
+        material={selectedMaterial}
+        tipo={movementType}
+        onSubmit={(data) =>
+          movementMutation.mutate({
+            ...data,
+            tipo: movementType,
+          })
+        }
+        isLoading={movementMutation.isPending}
+      />
+
+      {/* Edit Material Dialog */}
+      <EditMaterialDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        material={selectedMaterial}
+        onSubmit={(data) => updateMutation.mutate(data)}
+        isLoading={updateMutation.isPending}
+      />
+
+      {/* New Material Dialog */}
+      <NewMaterialDialog
+        open={newDialogOpen}
+        onOpenChange={setNewDialogOpen}
+        onSubmit={(data) => createMutation.mutate(data)}
+        isLoading={createMutation.isPending}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o material{" "}
+              <strong>{materialToDelete?.codigo} - {materialToDelete?.descricao}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => materialToDelete && deleteMutation.mutate(materialToDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
