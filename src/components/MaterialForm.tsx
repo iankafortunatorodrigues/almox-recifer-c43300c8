@@ -72,8 +72,10 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       ? Number(formData.estoqueMaximo) 
       : undefined;
     
-    // Quantidade para todos os tipos de materiais
-    const quantidadeAtual = Number(formData.quantidadeAtual) || 0;
+    // Para consumíveis, quantidade é sempre 0 (infinito)
+    const quantidadeAtual = formData.tipo === "consumivel" 
+      ? 0 
+      : (Number(formData.quantidadeAtual) || 0);
 
     onSubmit({
       codigo: formData.codigo,
@@ -143,28 +145,18 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       </div>
 
       {formData.tipo === "consumivel" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="quantidade">Quantidade Existente</Label>
-            <Input
-              id="quantidade"
-              type="number"
-              min="0"
-              value={formData.quantidadeAtual}
-              onChange={(e) => setFormData({ ...formData, quantidadeAtual: e.target.value })}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
-            <Input
-              id="unidadeMedida"
-              placeholder="Ex: UN, KG, M, L"
-              value={formData.unidadeMedida}
-              onChange={(e) => setFormData({ ...formData, unidadeMedida: e.target.value })}
-              required
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="unidadeMedida">Unidade de Medida</Label>
+          <Input
+            id="unidadeMedida"
+            placeholder="Ex: UN, KG, M, L"
+            value={formData.unidadeMedida}
+            onChange={(e) => setFormData({ ...formData, unidadeMedida: e.target.value })}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            Materiais consumíveis têm quantidade infinita (∞)
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
