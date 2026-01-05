@@ -44,7 +44,6 @@ const navItems: NavItem[] = [
   { title: "Empréstimos", url: "/loans", icon: BookMarked },
   { title: "Consumíveis", url: "/consumables", icon: Package },
   { title: "Compras", url: "/purchases", icon: ShoppingCart, roles: ["admin", "compras", "almoxarife"] },
-  { title: "Relatórios", url: "/reports", icon: BarChart3 },
   { title: "Configurações", url: "/settings", icon: Users, roles: ["admin"] },
 ];
 

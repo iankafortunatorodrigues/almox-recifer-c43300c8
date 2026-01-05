@@ -10,11 +10,6 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import Purchases from "./pages/Purchases";
-import Materials from "./pages/Materials";
-import Movements from "./pages/Movements";
-import Loans from "./pages/Loans";
-import Consumables from "./pages/Consumables";
-import Reports from "./pages/Reports";
 
 const queryClient = new QueryClient();
 
@@ -32,46 +27,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Index />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/materials"
-              element={
-                <ProtectedRoute>
-                  <Materials />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/movements"
-              element={
-                <ProtectedRoute>
-                  <Movements />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/loans"
-              element={
-                <ProtectedRoute>
-                  <Loans />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/consumables"
-              element={
-                <ProtectedRoute>
-                  <Consumables />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <Reports />
                 </ProtectedRoute>
               }
             />
