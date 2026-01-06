@@ -305,7 +305,7 @@ export function MaterialsTable({
                           <span className="font-semibold text-primary text-xs">
                             {material.estoqueMaximo - material.quantidadeAtual}
                           </span>
-                          {onAddToCart && (
+                          {onAddToCart && (status.variant === "destructive" || status.variant === "warning") && (
                             <Button
                               variant="ghost"
                               size="sm"
