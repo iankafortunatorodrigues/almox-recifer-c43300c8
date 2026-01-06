@@ -8,6 +8,7 @@ export interface Material {
   localizacao: string;
   estoqueMinimo: number;
   estoqueMaximo?: number;
+  estoqueSeguranca?: number;
   unidadeMedida: string;
   dataCadastro: string;
   fotoUrl?: string;

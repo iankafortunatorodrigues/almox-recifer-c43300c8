@@ -54,6 +54,7 @@ export type Database = {
           descricao: string
           estoque_maximo: number | null
           estoque_minimo: number
+          estoque_seguranca: number | null
           foto_url: string | null
           id: string
           localizacao: string
@@ -75,6 +76,7 @@ export type Database = {
           descricao: string
           estoque_maximo?: number | null
           estoque_minimo?: number
+          estoque_seguranca?: number | null
           foto_url?: string | null
           id?: string
           localizacao: string
@@ -96,6 +98,7 @@ export type Database = {
           descricao?: string
           estoque_maximo?: number | null
           estoque_minimo?: number
+          estoque_seguranca?: number | null
           foto_url?: string | null
           id?: string
           localizacao?: string
