@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Reports from "./pages/Reports";
+import Suppliers from "./pages/Suppliers";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/suppliers"
+              element={
+                <ProtectedRoute>
+                  <Suppliers />
                 </ProtectedRoute>
               }
             />

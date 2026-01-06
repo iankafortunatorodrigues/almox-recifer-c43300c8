@@ -64,6 +64,7 @@ import {
   Calendar,
   User,
   Building,
+  Building2,
   Paperclip,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -618,6 +619,15 @@ export default function PurchaseOrders() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/suppliers")}
+                className="hidden sm:flex"
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Fornecedores
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
