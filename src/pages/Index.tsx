@@ -77,6 +77,7 @@ const Index = () => {
       localizacao: m.localizacao,
       estoqueMinimo: m.estoque_minimo,
       estoqueMaximo: m.estoque_maximo,
+      estoqueSeguranca: m.estoque_seguranca,
       unidadeMedida: m.unidade_medida,
       dataCadastro: m.created_at,
       fotoUrl: m.foto_url,
@@ -158,6 +159,7 @@ const Index = () => {
               localizacao: payload.new.localizacao,
               estoqueMinimo: payload.new.estoque_minimo,
               estoqueMaximo: payload.new.estoque_maximo,
+              estoqueSeguranca: payload.new.estoque_seguranca,
               unidadeMedida: payload.new.unidade_medida,
               dataCadastro: payload.new.created_at,
               fotoUrl: payload.new.foto_url,
@@ -181,6 +183,7 @@ const Index = () => {
               localizacao: payload.new.localizacao,
               estoqueMinimo: payload.new.estoque_minimo,
               estoqueMaximo: payload.new.estoque_maximo,
+              estoqueSeguranca: payload.new.estoque_seguranca,
               unidadeMedida: payload.new.unidade_medida,
               dataCadastro: payload.new.created_at,
               fotoUrl: payload.new.foto_url,
@@ -279,6 +282,7 @@ const Index = () => {
         localizacao: materialData.localizacao,
         estoque_minimo: materialData.estoqueMinimo,
         estoque_maximo: materialData.estoqueMaximo,
+        estoque_seguranca: materialData.estoqueSeguranca,
         unidade_medida: materialData.unidadeMedida,
         foto_url: materialData.fotoUrl,
         tipo: materialData.tipo,
@@ -316,6 +320,7 @@ const Index = () => {
         localizacao: materialData.localizacao,
         estoque_minimo: materialData.estoqueMinimo,
         estoque_maximo: materialData.estoqueMaximo,
+        estoque_seguranca: materialData.estoqueSeguranca,
         unidade_medida: materialData.unidadeMedida,
         foto_url: materialData.fotoUrl,
         tipo: materialData.tipo,
@@ -592,56 +597,93 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
-        <div className="px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="px-3 sm:px-4 py-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Recifer Logo" className="h-20 w-20 object-contain" />
+              <img src={logo} alt="Recifer Logo" className="h-12 w-12 sm:h-16 sm:w-16 object-contain" />
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Almoxarifado</h1>
-                <p className="text-sm text-muted-foreground">Gestão de estoque e materiais</p>
+                <h1 className="text-xl sm:text-2xl font-bold">Almoxarifado</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Gestão de estoque e materiais</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Button onClick={() => setIsAddMaterialOpen(true)} className="gap-2 flex-1 sm:flex-none" disabled={role === "compras" || role === "diretor"}>
-                <Plus className="h-4 w-4" />
-                Novo Material
+            <div className="flex items-center gap-2">
+              <Button onClick={() => navigate("/")} variant="ghost" size="sm" className="hidden sm:flex gap-2">
+                Painel Principal
               </Button>
-              <Button 
-                onClick={() => setIsEntradaOpen(true)} 
-                variant="default" 
-                className="gap-2 flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
-                disabled={role === "compras" || role === "diretor"}
-              >
-                <ArrowDownCircle className="h-4 w-4" />
-                Entrada
-              </Button>
-              <Button 
-                onClick={() => setIsSaidaOpen(true)} 
-                variant="destructive" 
-                className="gap-2 flex-1 sm:flex-none"
-                disabled={role === "compras" || role === "diretor"}
-              >
-                <ArrowUpCircle className="h-4 w-4" />
-                Saída
-              </Button>
-              <Button onClick={() => navigate("/purchase-orders")} variant="outline" className="gap-2 flex-1 sm:flex-none bg-primary/10 hover:bg-primary/20 border-primary/30">
-                <ShoppingCart className="h-4 w-4" />
-                <span className="hidden sm:inline">Compras e Suprimentos</span>
-                <span className="sm:hidden">Compras</span>
-              </Button>
-              <Button onClick={() => navigate("/reports")} variant="outline" className="gap-2 flex-1 sm:flex-none">
-                <FileBarChart className="h-4 w-4" />
-                Relatórios
-              </Button>
-              <Button onClick={() => navigate("/settings")} variant="outline" className="gap-2 flex-1 sm:flex-none">
-                <Settings2 className="h-4 w-4" />
-                Configurações
-              </Button>
-              <Button onClick={signOut} variant="outline" className="gap-2 flex-1 sm:flex-none">
+              <Button onClick={signOut} variant="outline" size="sm" className="gap-2">
                 <LogOut className="h-4 w-4" />
-                Sair
+                <span className="hidden sm:inline">Sair</span>
               </Button>
             </div>
+          </div>
+          
+          {/* Action Buttons - Responsive Grid */}
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            <Button 
+              onClick={() => setIsAddMaterialOpen(true)} 
+              size="sm"
+              disabled={role === "compras" || role === "diretor"}
+              className="gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="truncate">Novo Material</span>
+            </Button>
+            <Button 
+              onClick={() => setIsEntradaOpen(true)} 
+              variant="default" 
+              size="sm"
+              className="gap-1.5 bg-green-600 hover:bg-green-700"
+              disabled={role === "compras" || role === "diretor"}
+            >
+              <ArrowDownCircle className="h-4 w-4" />
+              <span className="truncate">Entrada</span>
+            </Button>
+            <Button 
+              onClick={() => setIsSaidaOpen(true)} 
+              variant="destructive" 
+              size="sm"
+              className="gap-1.5"
+              disabled={role === "compras" || role === "diretor"}
+            >
+              <ArrowUpCircle className="h-4 w-4" />
+              <span className="truncate">Saída</span>
+            </Button>
+            <Button 
+              onClick={() => navigate("/purchase-orders")} 
+              variant="outline" 
+              size="sm"
+              className="gap-1.5"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              <span className="truncate">Compras</span>
+            </Button>
+            <Button 
+              onClick={() => navigate("/suppliers")} 
+              variant="outline" 
+              size="sm"
+              className="gap-1.5"
+            >
+              <Package className="h-4 w-4" />
+              <span className="truncate">Fornecedores</span>
+            </Button>
+            <Button 
+              onClick={() => navigate("/reports")} 
+              variant="outline" 
+              size="sm"
+              className="gap-1.5"
+            >
+              <FileBarChart className="h-4 w-4" />
+              <span className="truncate">Relatórios</span>
+            </Button>
+            <Button 
+              onClick={() => navigate("/settings")} 
+              variant="outline" 
+              size="sm"
+              className="gap-1.5"
+            >
+              <Settings2 className="h-4 w-4" />
+              <span className="truncate">Config.</span>
+            </Button>
           </div>
         </div>
       </header>

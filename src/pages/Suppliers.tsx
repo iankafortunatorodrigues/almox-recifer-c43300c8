@@ -235,20 +235,21 @@ export default function Suppliers() {
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/purchase-orders")}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/purchase-orders")} className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold">Fornecedores</h1>
+              <div className="flex items-center gap-2 min-w-0">
+                <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+                <h1 className="text-lg sm:text-xl font-bold truncate">Fornecedores</h1>
               </div>
             </div>
             {canManage && (
-              <Button onClick={handleOpenNew} className="gap-2">
+              <Button onClick={handleOpenNew} size="sm" className="gap-1.5 shrink-0">
                 <Plus className="h-4 w-4" />
-                Novo Fornecedor
+                <span className="hidden sm:inline">Novo Fornecedor</span>
+                <span className="sm:hidden">Novo</span>
               </Button>
             )}
           </div>

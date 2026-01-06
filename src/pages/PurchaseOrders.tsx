@@ -606,42 +606,41 @@ export default function PurchaseOrders() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div>
-                <h1 className="text-xl font-bold">Compras e Suprimentos</h1>
-                <p className="text-sm text-muted-foreground hidden sm:block">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold truncate">Compras e Suprimentos</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                   Gestão completa de pedidos de compra
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/suppliers")}
-                className="hidden sm:flex"
+                className="hidden md:flex gap-1.5"
               >
-                <Building2 className="h-4 w-4 mr-2" />
-                Fornecedores
+                <Building2 className="h-4 w-4" />
+                <span className="hidden lg:inline">Fornecedores</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="hidden sm:flex"
+                className="gap-1.5"
               >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
+                <Filter className="h-4 w-4" />
+                <span className="hidden sm:inline">Filtros</span>
               </Button>
               {canCreate && (
-                <Button onClick={() => setShowNewOrderDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" onClick={() => setShowNewOrderDialog(true)} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Novo Pedido</span>
-                  <span className="sm:hidden">Novo</span>
                 </Button>
               )}
             </div>

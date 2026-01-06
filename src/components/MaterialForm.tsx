@@ -20,6 +20,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
     localizacao: initialData?.localizacao || "",
     estoqueMinimo: initialData?.estoqueMinimo.toString() || "0",
     estoqueMaximo: initialData?.estoqueMaximo?.toString() || "",
+    estoqueSeguranca: initialData?.estoqueSeguranca?.toString() || "",
     unidadeMedida: initialData?.unidadeMedida || "",
     fotoUrl: initialData?.fotoUrl || "",
     tipo: initialData?.tipo || "estoque",
@@ -77,6 +78,10 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       ? 0 
       : (Number(formData.quantidadeAtual) || 0);
 
+    const estoqueSeguranca = formData.tipo === "estoque" && formData.estoqueSeguranca 
+      ? Number(formData.estoqueSeguranca) 
+      : undefined;
+
     onSubmit({
       codigo: formData.codigo,
       descricao: formData.descricao,
@@ -84,6 +89,7 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       localizacao: formData.localizacao,
       estoqueMinimo,
       estoqueMaximo,
+      estoqueSeguranca,
       unidadeMedida: formData.unidadeMedida,
       fotoUrl: formData.fotoUrl || undefined,
       tipo: formData.tipo as "estoque" | "emprestimo" | "consumivel",
@@ -186,28 +192,45 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
       )}
 
       {formData.tipo === "estoque" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="minimo">Estoque Mínimo</Label>
-            <Input
-              id="minimo"
-              type="number"
-              min="0"
-              value={formData.estoqueMinimo}
-              onChange={(e) => setFormData({ ...formData, estoqueMinimo: e.target.value })}
-              required
-            />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="minimo">Estoque Mínimo</Label>
+              <Input
+                id="minimo"
+                type="number"
+                min="0"
+                value={formData.estoqueMinimo}
+                onChange={(e) => setFormData({ ...formData, estoqueMinimo: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="maximo">Estoque Máximo (opcional)</Label>
+              <Input
+                id="maximo"
+                type="number"
+                min="0"
+                value={formData.estoqueMaximo}
+                onChange={(e) => setFormData({ ...formData, estoqueMaximo: e.target.value })}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="maximo">Estoque Máximo (opcional)</Label>
+            <Label htmlFor="seguranca">Estoque de Segurança (opcional)</Label>
             <Input
-              id="maximo"
+              id="seguranca"
               type="number"
               min="0"
-              value={formData.estoqueMaximo}
-              onChange={(e) => setFormData({ ...formData, estoqueMaximo: e.target.value })}
+              placeholder="Quantidade de segurança"
+              value={formData.estoqueSeguranca}
+              onChange={(e) => setFormData({ ...formData, estoqueSeguranca: e.target.value })}
             />
+            <p className="text-xs text-muted-foreground">
+              Quantidade extra de segurança para evitar falta de material
+            </p>
           </div>
         </div>
       )}
