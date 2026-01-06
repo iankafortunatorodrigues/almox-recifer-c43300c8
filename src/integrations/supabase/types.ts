@@ -346,6 +346,7 @@ export type Database = {
           observacao: string | null
           pedido_id: string
           selecionada: boolean | null
+          supplier_id: string | null
           validade: string | null
           valor_total: number
         }
@@ -357,6 +358,7 @@ export type Database = {
           observacao?: string | null
           pedido_id: string
           selecionada?: boolean | null
+          supplier_id?: string | null
           validade?: string | null
           valor_total: number
         }
@@ -368,6 +370,7 @@ export type Database = {
           observacao?: string | null
           pedido_id?: string
           selecionada?: boolean | null
+          supplier_id?: string | null
           validade?: string | null
           valor_total?: number
         }
@@ -379,7 +382,71 @@ export type Database = {
             referencedRelation: "purchase_orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "purchase_quotations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      suppliers: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          observacao: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          observacao?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          observacao?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
