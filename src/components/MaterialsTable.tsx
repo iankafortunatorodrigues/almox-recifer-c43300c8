@@ -25,6 +25,7 @@ interface MaterialsTableProps {
   onQuickAction?: (material: Material, action: "entrada" | "saida" | "emprestimo" | "devolucao") => void;
   onTogglePurchase?: (material: Material, newStatus: "pendente" | "em_cotacao" | "comprado") => void;
   onToggleObsolete?: (material: Material) => void;
+  onAddToCart?: (material: Material) => void;
   tipo: "estoque" | "emprestimo" | "consumivel";
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -46,6 +47,7 @@ export function MaterialsTable({
   onQuickAction,
   onTogglePurchase,
   onToggleObsolete,
+  onAddToCart,
   tipo,
   searchQuery,
   onSearchChange,
@@ -233,6 +235,7 @@ export function MaterialsTable({
               <TableHead className="text-center min-w-[100px]">Qtd.</TableHead>
               <TableHead className="text-center hidden md:table-cell">Mín.</TableHead>
               <TableHead className="text-center hidden md:table-cell">Máx.</TableHead>
+              <TableHead className="text-center hidden md:table-cell text-primary">Comprar</TableHead>
               <TableHead className="text-center hidden lg:table-cell">Valor Unit.</TableHead>
               <TableHead className="text-center hidden lg:table-cell">Valor Total</TableHead>
               <TableHead className="text-center hidden sm:table-cell">Status</TableHead>
@@ -243,7 +246,7 @@ export function MaterialsTable({
           <TableBody>
             {filteredMaterials.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   {materials.length === 0 
                     ? "Nenhum material cadastrado ainda"
                     : "Nenhum material encontrado com os filtros aplicados"}
@@ -292,7 +295,31 @@ export function MaterialsTable({
                       {material.tipo === "consumivel" ? "-" : material.estoqueMinimo}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
-                      {material.tipo === "consumivel" ? "-" : material.estoqueMaximo}
+                      {material.tipo === "consumivel" ? "-" : material.estoqueMaximo || "-"}
+                    </TableCell>
+                    <TableCell className="text-center hidden md:table-cell">
+                      {material.tipo === "consumivel" ? (
+                        "-"
+                      ) : material.estoqueMaximo && material.estoqueMaximo > material.quantidadeAtual ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="font-semibold text-primary text-xs">
+                            {material.estoqueMaximo - material.quantidadeAtual}
+                          </span>
+                          {onAddToCart && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onAddToCart(material)}
+                              className="h-6 w-6 p-0 hover:bg-primary/10"
+                              title={`Adicionar ${material.estoqueMaximo - material.quantidadeAtual} unidades ao pedido de compra`}
+                            >
+                              <ShoppingCart className="h-4 w-4 text-primary" />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-center text-muted-foreground text-xs hidden lg:table-cell">
                       {material.valorUnitario ? `R$ ${material.valorUnitario.toFixed(2)}` : "-"}

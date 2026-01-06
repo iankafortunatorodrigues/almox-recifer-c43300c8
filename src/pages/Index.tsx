@@ -571,6 +571,31 @@ const Index = () => {
     setQuickActionType(action);
   };
 
+  const handleAddToCart = (material: Material) => {
+    // Calcular quantidade a comprar (estoque máximo - estoque atual)
+    const quantidadeComprar = (material.estoqueMaximo || 0) - material.quantidadeAtual;
+    
+    if (quantidadeComprar <= 0) {
+      toast.info("Este material não precisa de compra (estoque atual ≥ estoque máximo)");
+      return;
+    }
+    
+    // Navegar para pedidos de compra com os dados do material
+    navigate("/pedidos-compra", {
+      state: {
+        addMaterial: {
+          descricao: `${material.codigo} - ${material.descricao}`,
+          quantidade: quantidadeComprar,
+          unidade: material.unidadeMedida,
+          categoria: material.categoria,
+          valorEstimado: material.valorUnitario ? material.valorUnitario * quantidadeComprar : undefined
+        }
+      }
+    });
+    
+    toast.success(`Material adicionado ao pedido de compra: ${quantidadeComprar} ${material.unidadeMedida}`);
+  };
+
   const filteredMaterials = materials.filter(
     m =>
       m.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -733,6 +758,7 @@ const Index = () => {
               onQuickAction={handleQuickAction}
               onTogglePurchase={handleTogglePurchaseStatus}
               onToggleObsolete={handleToggleObsolete}
+              onAddToCart={handleAddToCart}
               tipo="estoque"
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
