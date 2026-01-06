@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -148,6 +148,7 @@ export default function PurchaseOrders() {
   const { user } = useAuth();
   const { isAdmin, isCompras, isDiretor, isAlmoxarife, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // States
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -247,6 +248,26 @@ export default function PurchaseOrders() {
       loadOrders();
     }
   }, [roleLoading, user, loadOrders]);
+
+  // Handle navigation state (material added from cart)
+  useEffect(() => {
+    const state = location.state as { addMaterial?: { descricao: string; quantidade: number; unidade: string; categoria?: string; valorEstimado?: number } } | null;
+    
+    if (state?.addMaterial) {
+      // Open new order dialog with pre-filled data
+      setNewOrderItems([{
+        descricao: state.addMaterial.descricao,
+        categoria: state.addMaterial.categoria || "",
+        quantidade: state.addMaterial.quantidade,
+        unidade: state.addMaterial.unidade,
+        valor_estimado: state.addMaterial.valorEstimado || null
+      }]);
+      setShowNewOrderDialog(true);
+      
+      // Clear the state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Filter orders
   const filteredOrders = orders.filter((order) => {
