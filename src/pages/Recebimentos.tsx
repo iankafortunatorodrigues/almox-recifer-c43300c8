@@ -12,6 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -42,9 +44,17 @@ import {
   Calendar,
   Eye,
   X,
+  FileSpreadsheet,
+  FileText,
+  Pencil,
+  Lock,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface RecebimentoItem {
   id?: string;
@@ -72,6 +82,8 @@ interface Filters {
   dataFim: string;
 }
 
+const ACTION_PASSWORD = "200991";
+
 export default function Recebimentos() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -79,9 +91,13 @@ export default function Recebimentos() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [selectedRecebimento, setSelectedRecebimento] = useState<Recebimento | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  
+  const [password, setPassword] = useState("");
+  const [pendingAction, setPendingAction] = useState<{ type: "edit" | "delete"; id: string } | null>(null);
+
   const [filters, setFilters] = useState<Filters>({
     search: "",
     tipo: "todos",
@@ -185,7 +201,6 @@ export default function Recebimentos() {
     }
 
     try {
-      // Criar recebimento
       const { data: recebimento, error: recebimentoError } = await supabase
         .from("recebimentos")
         .insert({
@@ -201,7 +216,6 @@ export default function Recebimentos() {
 
       if (recebimentoError) throw recebimentoError;
 
-      // Criar itens
       const itensToInsert = validItens.map((item) => ({
         recebimento_id: recebimento.id,
         descricao: item.descricao,
@@ -223,6 +237,55 @@ export default function Recebimentos() {
     } catch (error) {
       console.error("Erro ao salvar:", error);
       toast.error("Erro ao registrar recebimento");
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRecebimento) return;
+
+    const validItens = itens.filter((item) => item.descricao.trim());
+    if (validItens.length === 0) {
+      toast.error("Adicione pelo menos um item");
+      return;
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from("recebimentos")
+        .update({
+          fornecedor: formData.fornecedor,
+          tipo_recebimento: formData.tipo_recebimento,
+          data_recebimento: formData.data_recebimento,
+          foto_nota_url: formData.foto_nota_url || null,
+          observacao: formData.observacao || null,
+        })
+        .eq("id", selectedRecebimento.id);
+
+      if (updateError) throw updateError;
+
+      // Deletar itens antigos e inserir novos
+      await supabase.from("recebimento_itens").delete().eq("recebimento_id", selectedRecebimento.id);
+
+      const itensToInsert = validItens.map((item) => ({
+        recebimento_id: selectedRecebimento.id,
+        descricao: item.descricao,
+        quantidade: item.quantidade,
+        unidade: item.unidade,
+        observacao: item.observacao || null,
+      }));
+
+      const { error: itensError } = await supabase.from("recebimento_itens").insert(itensToInsert);
+      if (itensError) throw itensError;
+
+      toast.success("Recebimento atualizado com sucesso!");
+      setEditDialogOpen(false);
+      setSelectedRecebimento(null);
+      resetForm();
+      fetchRecebimentos();
+    } catch (error) {
+      console.error("Erro ao atualizar:", error);
+      toast.error("Erro ao atualizar recebimento");
     }
   };
 
@@ -251,9 +314,66 @@ export default function Recebimentos() {
     }
   };
 
-  const deleteRecebimento = async (id: string) => {
-    if (!confirm("Deseja realmente excluir este recebimento?")) return;
+  const requestAction = (type: "edit" | "delete", id: string) => {
+    setPendingAction({ type, id });
+    setPassword("");
+    setPasswordDialogOpen(true);
+  };
 
+  const confirmPassword = async () => {
+    if (password !== ACTION_PASSWORD) {
+      toast.error("Senha incorreta!");
+      return;
+    }
+
+    setPasswordDialogOpen(false);
+    setPassword("");
+
+    if (!pendingAction) return;
+
+    if (pendingAction.type === "delete") {
+      await executeDelete(pendingAction.id);
+    } else if (pendingAction.type === "edit") {
+      await openEditDialog(pendingAction.id);
+    }
+
+    setPendingAction(null);
+  };
+
+  const openEditDialog = async (id: string) => {
+    const recebimento = recebimentos.find((r) => r.id === id);
+    if (!recebimento) return;
+
+    const { data: itensData } = await supabase
+      .from("recebimento_itens")
+      .select("*")
+      .eq("recebimento_id", id);
+
+    setFormData({
+      fornecedor: recebimento.fornecedor,
+      tipo_recebimento: recebimento.tipo_recebimento,
+      data_recebimento: recebimento.data_recebimento,
+      foto_nota_url: recebimento.foto_nota_url || "",
+      observacao: recebimento.observacao || "",
+    });
+
+    setItens(
+      itensData && itensData.length > 0
+        ? itensData.map((i) => ({
+            id: i.id,
+            descricao: i.descricao,
+            quantidade: i.quantidade,
+            unidade: i.unidade,
+            observacao: i.observacao || "",
+          }))
+        : [{ descricao: "", quantidade: 1, unidade: "UN", observacao: "" }]
+    );
+
+    setSelectedRecebimento(recebimento);
+    setEditDialogOpen(true);
+  };
+
+  const executeDelete = async (id: string) => {
     try {
       const { error } = await supabase.from("recebimentos").delete().eq("id", id);
       if (error) throw error;
@@ -283,25 +403,284 @@ export default function Recebimentos() {
     }
   };
 
+  // Exportar para Excel
+  const exportToExcel = async () => {
+    const dataToExport = await Promise.all(
+      filteredRecebimentos.map(async (r) => {
+        const { data: itensData } = await supabase
+          .from("recebimento_itens")
+          .select("*")
+          .eq("recebimento_id", r.id);
+
+        const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join("; ") || "";
+
+        return {
+          Data: format(new Date(r.data_recebimento), "dd/MM/yyyy"),
+          Fornecedor: r.fornecedor,
+          Tipo: getTipoLabel(r.tipo_recebimento),
+          Itens: itensStr,
+          Observação: r.observacao || "",
+        };
+      })
+    );
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Recebimentos");
+    XLSX.writeFile(wb, `recebimentos_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    toast.success("Excel exportado com sucesso!");
+  };
+
+  // Exportar para PDF
+  const exportToPDF = async () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Relatório de Recebimentos", 14, 22);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 30);
+
+    const tableData = await Promise.all(
+      filteredRecebimentos.map(async (r) => {
+        const { data: itensData } = await supabase
+          .from("recebimento_itens")
+          .select("*")
+          .eq("recebimento_id", r.id);
+
+        const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade})`).join(", ") || "";
+
+        return [
+          format(new Date(r.data_recebimento), "dd/MM/yyyy"),
+          r.fornecedor,
+          getTipoLabel(r.tipo_recebimento),
+          itensStr.substring(0, 50) + (itensStr.length > 50 ? "..." : ""),
+          r.observacao?.substring(0, 30) || "-",
+        ];
+      })
+    );
+
+    autoTable(doc, {
+      head: [["Data", "Fornecedor", "Tipo", "Itens", "Obs"]],
+      body: tableData,
+      startY: 38,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(`recebimentos_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    toast.success("PDF exportado com sucesso!");
+  };
+
   // Filtrar recebimentos
   const filteredRecebimentos = recebimentos.filter((r) => {
     const matchSearch =
       r.fornecedor.toLowerCase().includes(filters.search.toLowerCase()) ||
       r.observacao?.toLowerCase().includes(filters.search.toLowerCase());
-    
+
     const matchTipo = filters.tipo === "todos" || r.tipo_recebimento === filters.tipo;
-    
+
     const matchDataInicio = !filters.dataInicio || r.data_recebimento >= filters.dataInicio;
     const matchDataFim = !filters.dataFim || r.data_recebimento <= filters.dataFim;
 
     return matchSearch && matchTipo && matchDataInicio && matchDataFim;
   });
 
+  const renderForm = (isEdit = false) => (
+    <form onSubmit={isEdit ? handleEditSubmit : handleSubmit} className="space-y-4">
+      {/* Foto da Nota Fiscal */}
+      <div className="space-y-2">
+        <Label>Foto da Nota Fiscal</Label>
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Label htmlFor={isEdit ? "fotoFileEdit" : "fotoFile"} className="cursor-pointer">
+              <div className="flex items-center justify-center gap-2 h-10 px-4 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90">
+                <FileImage className="h-4 w-4" />
+                {uploadingPhoto ? "Enviando..." : "Arquivo"}
+              </div>
+            </Label>
+            <Input
+              id={isEdit ? "fotoFileEdit" : "fotoFile"}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handlePhotoUpload(e)}
+              className="hidden"
+              disabled={uploadingPhoto}
+            />
+          </div>
+          <div className="flex-1">
+            <Label htmlFor={isEdit ? "fotoCameraEdit" : "fotoCamera"} className="cursor-pointer">
+              <div className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                <Camera className="h-4 w-4" />
+                {uploadingPhoto ? "Enviando..." : "Câmera"}
+              </div>
+            </Label>
+            <Input
+              id={isEdit ? "fotoCameraEdit" : "fotoCamera"}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => handlePhotoUpload(e, true)}
+              className="hidden"
+              disabled={uploadingPhoto}
+            />
+          </div>
+        </div>
+        {formData.foto_nota_url && (
+          <div className="relative">
+            <img
+              src={formData.foto_nota_url}
+              alt="Nota Fiscal"
+              className="w-full h-32 object-cover rounded-md"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={() => setFormData({ ...formData, foto_nota_url: "" })}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="fornecedor">Fornecedor *</Label>
+          <Input
+            id="fornecedor"
+            value={formData.fornecedor}
+            onChange={(e) => setFormData({ ...formData, fornecedor: e.target.value })}
+            placeholder="Nome do fornecedor"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="tipo">Tipo de Recebimento *</Label>
+          <Select
+            value={formData.tipo_recebimento}
+            onValueChange={(value) => setFormData({ ...formData, tipo_recebimento: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="consumiveis">Consumíveis</SelectItem>
+              <SelectItem value="materia_prima">Matéria Prima</SelectItem>
+              <SelectItem value="vendas">Vendas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="data">Data de Recebimento *</Label>
+        <Input
+          id="data"
+          type="date"
+          value={formData.data_recebimento}
+          onChange={(e) => setFormData({ ...formData, data_recebimento: e.target.value })}
+          required
+        />
+      </div>
+
+      {/* Itens */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Itens Recebidos *</Label>
+          <Button type="button" variant="outline" size="sm" onClick={addItem}>
+            <Plus className="h-4 w-4 mr-1" />
+            Adicionar Item
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {itens.map((item, index) => (
+            <Card key={index} className="p-3">
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-12 sm:col-span-5">
+                  <Input
+                    placeholder="Descrição do item"
+                    value={item.descricao}
+                    onChange={(e) => updateItem(index, "descricao", e.target.value)}
+                  />
+                </div>
+                <div className="col-span-4 sm:col-span-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="Qtd"
+                    value={item.quantidade}
+                    onChange={(e) => updateItem(index, "quantidade", parseInt(e.target.value) || 1)}
+                  />
+                </div>
+                <div className="col-span-4 sm:col-span-2">
+                  <Input
+                    placeholder="UN"
+                    value={item.unidade}
+                    onChange={(e) => updateItem(index, "unidade", e.target.value)}
+                  />
+                </div>
+                <div className="col-span-3 sm:col-span-2">
+                  <Input
+                    placeholder="Obs"
+                    value={item.observacao || ""}
+                    onChange={(e) => updateItem(index, "observacao", e.target.value)}
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeItem(index)}
+                    disabled={itens.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="observacao">Observação Geral</Label>
+        <Textarea
+          id="observacao"
+          value={formData.observacao}
+          onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
+          placeholder="Observações sobre o recebimento..."
+          rows={3}
+        />
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="submit" className="flex-1">
+          {isEdit ? "Atualizar Recebimento" : "Registrar Recebimento"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            isEdit ? setEditDialogOpen(false) : setDialogOpen(false);
+            resetForm();
+            setSelectedRecebimento(null);
+          }}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
                 <ArrowLeft className="h-5 w-5" />
@@ -312,212 +691,31 @@ export default function Recebimentos() {
               </div>
             </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Recebimento
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Registrar Recebimento</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Foto da Nota Fiscal */}
-                  <div className="space-y-2">
-                    <Label>Foto da Nota Fiscal</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <Label htmlFor="fotoFile" className="cursor-pointer">
-                          <div className="flex items-center justify-center gap-2 h-10 px-4 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90">
-                            <FileImage className="h-4 w-4" />
-                            {uploadingPhoto ? "Enviando..." : "Arquivo"}
-                          </div>
-                        </Label>
-                        <Input
-                          id="fotoFile"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handlePhotoUpload(e)}
-                          className="hidden"
-                          disabled={uploadingPhoto}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="fotoCamera" className="cursor-pointer">
-                          <div className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
-                            <Camera className="h-4 w-4" />
-                            {uploadingPhoto ? "Enviando..." : "Câmera"}
-                          </div>
-                        </Label>
-                        <Input
-                          id="fotoCamera"
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(e) => handlePhotoUpload(e, true)}
-                          className="hidden"
-                          disabled={uploadingPhoto}
-                        />
-                      </div>
-                    </div>
-                    {formData.foto_nota_url && (
-                      <div className="relative">
-                        <img
-                          src={formData.foto_nota_url}
-                          alt="Nota Fiscal"
-                          className="w-full h-32 object-cover rounded-md"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => setFormData({ ...formData, foto_nota_url: "" })}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={exportToExcel}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Excel
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportToPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fornecedor">Fornecedor *</Label>
-                      <Input
-                        id="fornecedor"
-                        value={formData.fornecedor}
-                        onChange={(e) => setFormData({ ...formData, fornecedor: e.target.value })}
-                        placeholder="Nome do fornecedor"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="tipo">Tipo de Recebimento *</Label>
-                      <Select
-                        value={formData.tipo_recebimento}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, tipo_recebimento: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="consumiveis">Consumíveis</SelectItem>
-                          <SelectItem value="materia_prima">Matéria Prima</SelectItem>
-                          <SelectItem value="vendas">Vendas</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="data">Data de Recebimento *</Label>
-                    <Input
-                      id="data"
-                      type="date"
-                      value={formData.data_recebimento}
-                      onChange={(e) =>
-                        setFormData({ ...formData, data_recebimento: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  {/* Itens */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Itens Recebidos *</Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Adicionar Item
-                      </Button>
-                    </div>
-                    <div className="space-y-3">
-                      {itens.map((item, index) => (
-                        <Card key={index} className="p-3">
-                          <div className="grid grid-cols-12 gap-2">
-                            <div className="col-span-12 sm:col-span-5">
-                              <Input
-                                placeholder="Descrição do item"
-                                value={item.descricao}
-                                onChange={(e) => updateItem(index, "descricao", e.target.value)}
-                              />
-                            </div>
-                            <div className="col-span-4 sm:col-span-2">
-                              <Input
-                                type="number"
-                                min="1"
-                                placeholder="Qtd"
-                                value={item.quantidade}
-                                onChange={(e) =>
-                                  updateItem(index, "quantidade", parseInt(e.target.value) || 1)
-                                }
-                              />
-                            </div>
-                            <div className="col-span-4 sm:col-span-2">
-                              <Input
-                                placeholder="UN"
-                                value={item.unidade}
-                                onChange={(e) => updateItem(index, "unidade", e.target.value)}
-                              />
-                            </div>
-                            <div className="col-span-3 sm:col-span-2">
-                              <Input
-                                placeholder="Obs"
-                                value={item.observacao || ""}
-                                onChange={(e) => updateItem(index, "observacao", e.target.value)}
-                              />
-                            </div>
-                            <div className="col-span-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeItem(index)}
-                                disabled={itens.length === 1}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="observacao">Observação Geral</Label>
-                    <Textarea
-                      id="observacao"
-                      value={formData.observacao}
-                      onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
-                      placeholder="Observações sobre o recebimento..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <Button type="submit" className="flex-1">
-                      Registrar Recebimento
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setDialogOpen(false);
-                        resetForm();
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Registrar Recebimento</DialogTitle>
+                  </DialogHeader>
+                  {renderForm(false)}
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
       </header>
@@ -580,9 +778,7 @@ export default function Recebimentos() {
                 variant="ghost"
                 size="sm"
                 className="mt-3"
-                onClick={() =>
-                  setFilters({ search: "", tipo: "todos", dataInicio: "", dataFim: "" })
-                }
+                onClick={() => setFilters({ search: "", tipo: "todos", dataInicio: "", dataFim: "" })}
               >
                 Limpar Filtros
               </Button>
@@ -651,17 +847,20 @@ export default function Recebimentos() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => viewRecebimento(recebimento)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => viewRecebimento(recebimento)}>
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => deleteRecebimento(recebimento.id)}
+                              onClick={() => requestAction("edit", recebimento.id)}
+                            >
+                              <Pencil className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => requestAction("delete", recebimento.id)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -741,6 +940,46 @@ export default function Recebimentos() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Edição */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Recebimento</DialogTitle>
+          </DialogHeader>
+          {renderForm(true)}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Senha */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Confirmar Ação
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha para {pendingAction?.type === "edit" ? "editar" : "excluir"} este recebimento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Digite a senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmPassword()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmPassword}>Confirmar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
