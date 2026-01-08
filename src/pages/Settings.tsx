@@ -29,13 +29,29 @@ export default function Settings() {
   const [newUserNome, setNewUserNome] = useState("");
   const [newUserRole, setNewUserRole] = useState<string>("");
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [passwordChanges, setPasswordChanges] = useState<any[]>([]);
 
   useEffect(() => {
     if (isAdmin) {
       loadUsers();
       loadAccessRequests();
+      loadPasswordChanges();
     }
   }, [isAdmin]);
+
+  const loadPasswordChanges = async () => {
+    const { data, error } = await supabase
+      .from("password_changes")
+      .select("*")
+      .order("changed_at", { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error("Error loading password changes:", error);
+    } else {
+      setPasswordChanges(data || []);
+    }
+  };
 
   const loadUsers = async () => {
     const { data, error } = await supabase
@@ -80,6 +96,19 @@ export default function Settings() {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       
       if (error) throw error;
+
+      // Registrar alteração de senha para o admin ver
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("nome")
+        .eq("id", user?.id)
+        .single();
+
+      await supabase.from("password_changes").insert({
+        user_id: user?.id,
+        user_email: user?.email || "",
+        user_nome: profileData?.nome || user?.email
+      });
 
       toast({
         title: "Senha alterada",
@@ -256,13 +285,14 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="password" className="w-full">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-1'}`}>
             <TabsTrigger value="password" className="text-xs sm:text-sm">Senha</TabsTrigger>
             {isAdmin && (
               <>
                 <TabsTrigger value="create-user" className="text-xs sm:text-sm">Cadastrar</TabsTrigger>
                 <TabsTrigger value="requests" className="text-xs sm:text-sm">Solicitações ({accessRequests.length})</TabsTrigger>
                 <TabsTrigger value="users" className="text-xs sm:text-sm">Usuários</TabsTrigger>
+                <TabsTrigger value="password-logs" className="text-xs sm:text-sm">Logs Senha</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -420,6 +450,31 @@ export default function Settings() {
                 ))}
               </div>
             </Card>
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="password-logs">
+              <Card className="p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4">Alterações de Senha</h2>
+                <div className="space-y-2">
+                  {passwordChanges.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">Nenhuma alteração de senha registrada</p>
+                  ) : (
+                    passwordChanges.map((change) => (
+                      <div key={change.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded gap-2">
+                        <div>
+                          <p className="font-medium text-sm sm:text-base">{change.user_nome || change.user_email}</p>
+                          <p className="text-xs text-muted-foreground">{change.user_email}</p>
+                        </div>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {new Date(change.changed_at).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Card>
             </TabsContent>
           )}
         </Tabs>
