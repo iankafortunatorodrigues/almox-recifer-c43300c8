@@ -403,6 +403,22 @@ export default function Recebimentos() {
     }
   };
 
+  // Converter imagem URL para base64
+  const imageUrlToBase64 = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  };
+
   // Exportar para Excel
   const exportToExcel = async () => {
     const dataToExport = await Promise.all(
@@ -420,11 +436,23 @@ export default function Recebimentos() {
           Tipo: getTipoLabel(r.tipo_recebimento),
           Itens: itensStr,
           Observação: r.observacao || "",
+          "Link Nota Fiscal": r.foto_nota_url || "",
         };
       })
     );
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
+    
+    // Ajustar largura das colunas
+    ws["!cols"] = [
+      { wch: 12 }, // Data
+      { wch: 25 }, // Fornecedor
+      { wch: 15 }, // Tipo
+      { wch: 40 }, // Itens
+      { wch: 25 }, // Observação
+      { wch: 50 }, // Link Nota Fiscal
+    ];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Recebimentos");
     XLSX.writeFile(wb, `recebimentos_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
@@ -466,6 +494,35 @@ export default function Recebimentos() {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [59, 130, 246] },
     });
+
+    // Adicionar imagens das notas fiscais em páginas separadas
+    let hasImages = false;
+    for (const r of filteredRecebimentos) {
+      if (r.foto_nota_url) {
+        const base64 = await imageUrlToBase64(r.foto_nota_url);
+        if (base64) {
+          if (!hasImages) {
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.text("Anexos - Notas Fiscais", 14, 20);
+            hasImages = true;
+          } else {
+            doc.addPage();
+          }
+          
+          doc.setFontSize(10);
+          doc.text(`Fornecedor: ${r.fornecedor}`, 14, 35);
+          doc.text(`Data: ${format(new Date(r.data_recebimento), "dd/MM/yyyy")}`, 14, 42);
+          
+          try {
+            // Adicionar imagem com tamanho proporcional
+            doc.addImage(base64, "JPEG", 14, 50, 180, 0);
+          } catch (imgError) {
+            doc.text("Erro ao carregar imagem", 14, 55);
+          }
+        }
+      }
+    }
 
     doc.save(`recebimentos_${format(new Date(), "yyyy-MM-dd")}.pdf`);
     toast.success("PDF exportado com sucesso!");
