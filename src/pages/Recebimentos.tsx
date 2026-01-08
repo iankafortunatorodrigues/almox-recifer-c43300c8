@@ -1124,49 +1124,51 @@ export default function Recebimentos() {
                 Nenhum recebimento encontrado
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Fornecedor</TableHead>
-                      <TableHead>N° Nota</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Registrado por</TableHead>
-                      <TableHead>Observação</TableHead>
-                      <TableHead className="text-center">Foto Nota</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      <TableHead className="whitespace-nowrap">Data</TableHead>
+                      <TableHead className="whitespace-nowrap">Fornecedor</TableHead>
+                      <TableHead className="hidden md:table-cell whitespace-nowrap">N° Nota</TableHead>
+                      <TableHead className="whitespace-nowrap">Tipo</TableHead>
+                      <TableHead className="hidden lg:table-cell whitespace-nowrap">Registrado por</TableHead>
+                      <TableHead className="hidden xl:table-cell">Observação</TableHead>
+                      <TableHead className="hidden sm:table-cell text-center whitespace-nowrap">Foto</TableHead>
+                      <TableHead className="text-right whitespace-nowrap sticky right-0 bg-background">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredRecebimentos.map((recebimento) => (
                       <TableRow key={recebimento.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {format(new Date(recebimento.data_recebimento), "dd/MM/yyyy")}
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                            <span className="text-xs sm:text-sm">{format(new Date(recebimento.data_recebimento), "dd/MM/yy")}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">{recebimento.fornecedor}</TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="font-medium text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">{recebimento.fornecedor}</TableCell>
+                        <TableCell className="hidden md:table-cell font-mono text-xs sm:text-sm">
                           {recebimento.numero_nota || "-"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getTipoBadgeVariant(recebimento.tipo_recebimento) as any}>
-                            {getTipoLabel(recebimento.tipo_recebimento)}
+                          <Badge variant={getTipoBadgeVariant(recebimento.tipo_recebimento) as any} className="text-xs">
+                            <span className="hidden sm:inline">{getTipoLabel(recebimento.tipo_recebimento)}</span>
+                            <span className="sm:hidden">{recebimento.tipo_recebimento === "consumiveis" ? "Cons." : recebimento.tipo_recebimento === "materia_prima" ? "M.P." : "Vend."}</span>
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="hidden lg:table-cell text-xs sm:text-sm text-muted-foreground">
                           {recebimento.usuario_nome || "-"}
                         </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
+                        <TableCell className="hidden xl:table-cell max-w-[200px] truncate text-xs sm:text-sm">
                           {recebimento.observacao || "-"}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="hidden sm:table-cell text-center">
                           {recebimento.foto_nota_url ? (
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
+                              className="h-7 w-7"
                               onClick={() => window.open(recebimento.foto_nota_url, "_blank")}
                             >
                               <FileImage className="h-4 w-4 text-primary" />
@@ -1175,23 +1177,25 @@ export default function Recebimentos() {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => viewRecebimento(recebimento)}>
+                        <TableCell className="text-right sticky right-0 bg-background">
+                          <div className="flex justify-end gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => viewRecebimento(recebimento)}>
                               <Eye className="h-4 w-4" />
                             </Button>
                             {canEdit && (
                               <>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
+                                  className="h-7 w-7"
                                   onClick={() => requestAction("edit", recebimento.id)}
                                 >
                                   <Pencil className="h-4 w-4 text-blue-500" />
                                 </Button>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
+                                  className="h-7 w-7"
                                   onClick={() => requestAction("delete", recebimento.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />

@@ -298,98 +298,110 @@ export default function Suppliers() {
         </div>
 
         {/* Table */}
-        <Card>
+        <Card className="overflow-hidden">
           <ScrollArea className="h-[calc(100vh-380px)]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Status</TableHead>
-                  {canManage && <TableHead className="text-right">Ações</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSuppliers.length === 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={canManage ? 6 : 5} className="text-center py-8 text-muted-foreground">
-                      {searchQuery ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
-                    </TableCell>
+                    <TableHead className="whitespace-nowrap">Fornecedor</TableHead>
+                    <TableHead className="hidden md:table-cell whitespace-nowrap">Contato</TableHead>
+                    <TableHead className="hidden lg:table-cell whitespace-nowrap">Localização</TableHead>
+                    <TableHead className="hidden sm:table-cell whitespace-nowrap">Categoria</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    {canManage && <TableHead className="text-right whitespace-nowrap sticky right-0 bg-background">Ações</TableHead>}
                   </TableRow>
-                ) : (
-                  filteredSuppliers.map((supplier) => (
-                    <TableRow key={supplier.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{supplier.nome}</div>
-                          {supplier.cnpj && (
-                            <div className="text-xs text-muted-foreground">{supplier.cnpj}</div>
-                          )}
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredSuppliers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={canManage ? 6 : 5} className="text-center py-8 text-muted-foreground">
+                        {searchQuery ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {supplier.email && (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Mail className="h-3 w-3 text-muted-foreground" />
-                              {supplier.email}
+                    </TableRow>
+                  ) : (
+                    filteredSuppliers.map((supplier) => (
+                      <TableRow key={supplier.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-sm">{supplier.nome}</div>
+                            {supplier.cnpj && (
+                              <div className="text-xs text-muted-foreground">{supplier.cnpj}</div>
+                            )}
+                            {/* Mostrar info extra em mobile */}
+                            <div className="md:hidden mt-1 space-y-0.5">
+                              {supplier.telefone && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  {supplier.telefone}
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {supplier.telefone && (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Phone className="h-3 w-3 text-muted-foreground" />
-                              {supplier.telefone}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {supplier.cidade && (
-                          <div className="flex items-center gap-1 text-sm">
-                            <MapPin className="h-3 w-3 text-muted-foreground" />
-                            {supplier.cidade}
-                            {supplier.estado && ` - ${supplier.estado}`}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {supplier.categoria && (
-                          <Badge variant="secondary">{supplier.categoria}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={supplier.ativo ? "default" : "secondary"}>
-                          {supplier.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      {canManage && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleEdit(supplier)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => confirmDelete(supplier)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </div>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="space-y-1">
+                            {supplier.email && (
+                              <div className="flex items-center gap-1 text-xs sm:text-sm">
+                                <Mail className="h-3 w-3 text-muted-foreground" />
+                                <span className="truncate max-w-[150px]">{supplier.email}</span>
+                              </div>
+                            )}
+                            {supplier.telefone && (
+                              <div className="flex items-center gap-1 text-xs sm:text-sm">
+                                <Phone className="h-3 w-3 text-muted-foreground" />
+                                {supplier.telefone}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {supplier.cidade && (
+                            <div className="flex items-center gap-1 text-xs sm:text-sm">
+                              <MapPin className="h-3 w-3 text-muted-foreground" />
+                              {supplier.cidade}
+                              {supplier.estado && ` - ${supplier.estado}`}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {supplier.categoria && (
+                            <Badge variant="secondary" className="text-xs">{supplier.categoria}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={supplier.ativo ? "default" : "secondary"} className="text-xs">
+                            {supplier.ativo ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        {canManage && (
+                          <TableCell className="text-right sticky right-0 bg-background">
+                            <div className="flex justify-end gap-0.5">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => handleEdit(supplier)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => confirmDelete(supplier)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </ScrollArea>
         </Card>
       </main>
