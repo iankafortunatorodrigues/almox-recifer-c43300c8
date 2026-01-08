@@ -447,7 +447,7 @@ export default function Recebimentos() {
     }
   };
 
-  // Exportar para Excel com imagens grandes
+  // Exportar para Excel com link para abrir imagem
   const exportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Sistema de Recebimentos';
@@ -475,7 +475,7 @@ export default function Recebimentos() {
 
     // Cabecalho da tabela
     const headerRow = worksheet.getRow(4);
-    const headers = ['#', 'Data', 'Fornecedor', 'Tipo', 'Itens Recebidos', 'Observacao', 'Nota Fiscal', 'Ver Imagem'];
+    const headers = ['#', 'Data', 'Fornecedor', 'Tipo', 'Itens Recebidos', 'Observacao', 'Ver Nota Fiscal'];
     headers.forEach((header, index) => {
       const cell = headerRow.getCell(index + 1);
       cell.value = header;
@@ -495,9 +495,8 @@ export default function Recebimentos() {
     worksheet.getColumn(3).width = 25;  // Fornecedor
     worksheet.getColumn(4).width = 15;  // Tipo
     worksheet.getColumn(5).width = 40;  // Itens
-    worksheet.getColumn(6).width = 20;  // Observacao
-    worksheet.getColumn(7).width = 25;  // Nota Fiscal (miniatura)
-    worksheet.getColumn(8).width = 20;  // Ver Imagem (link)
+    worksheet.getColumn(6).width = 25;  // Observacao
+    worksheet.getColumn(7).width = 25;  // Ver Nota Fiscal (link)
 
     let rowIndex = 5;
     let contador = 1;
@@ -518,12 +517,10 @@ export default function Recebimentos() {
       row.getCell(5).value = itensStr;
       row.getCell(5).alignment = { wrapText: true, vertical: 'top' };
       row.getCell(6).value = r.observacao || "-";
-      row.getCell(7).value = "";
-      row.getCell(8).value = "";
 
       // Estilo alternado
       const bgColor = contador % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF';
-      for (let i = 1; i <= 8; i++) {
+      for (let i = 1; i <= 7; i++) {
         row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
         row.getCell(i).border = {
           bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
@@ -531,58 +528,27 @@ export default function Recebimentos() {
         row.getCell(i).alignment = { ...row.getCell(i).alignment, vertical: 'middle' };
       }
 
-      // Adicionar imagem e link se existir
+      // Adicionar link para abrir imagem
       if (r.foto_nota_url) {
-        try {
-          const imageData = await imageUrlToArrayBuffer(r.foto_nota_url);
-          if (imageData) {
-            const uint8Array = new Uint8Array(imageData.buffer);
-            const base64 = btoa(
-              uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), "")
-            );
-
-            const imageId = workbook.addImage({
-              base64: base64,
-              extension: imageData.extension,
-            });
-
-            // Altura maior para imagem
-            row.height = 100;
-
-            worksheet.addImage(imageId, {
-              tl: { col: 6, row: rowIndex - 1 },
-              ext: { width: 120, height: 90 },
-            });
-
-            // Adicionar link para ver imagem completa
-            const linkCell = row.getCell(8);
-            linkCell.value = {
-              text: 'ABRIR IMAGEM',
-              hyperlink: r.foto_nota_url,
-            };
-            linkCell.font = { 
-              color: { argb: 'FF0066CC' }, 
-              underline: true, 
-              bold: true,
-              size: 10 
-            };
-            linkCell.alignment = { horizontal: 'center', vertical: 'middle' };
-          } else {
-            row.getCell(7).value = "Indisponivel";
-            row.getCell(8).value = "-";
-          }
-        } catch (error) {
-          console.error("Error adding image to Excel:", error);
-          row.getCell(7).value = "Erro";
-          row.getCell(8).value = "-";
-        }
+        const linkCell = row.getCell(7);
+        linkCell.value = {
+          text: 'CLIQUE PARA VER IMAGEM',
+          hyperlink: r.foto_nota_url,
+        };
+        linkCell.font = { 
+          color: { argb: 'FF0066CC' }, 
+          underline: true, 
+          bold: true,
+          size: 10 
+        };
+        linkCell.alignment = { horizontal: 'center', vertical: 'middle' };
       } else {
-        row.height = Math.max(25, itensData?.length ? itensData.length * 15 + 10 : 25);
         row.getCell(7).value = "Sem anexo";
         row.getCell(7).font = { italic: true, color: { argb: 'FF999999' } };
-        row.getCell(8).value = "-";
-        row.getCell(8).font = { color: { argb: 'FF999999' } };
+        row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
       }
+
+      row.height = Math.max(25, itensData?.length ? itensData.length * 15 + 10 : 25);
 
       rowIndex++;
       contador++;
@@ -590,7 +556,7 @@ export default function Recebimentos() {
 
     // Rodape
     const footerRow = worksheet.getRow(rowIndex + 1);
-    worksheet.mergeCells(`A${rowIndex + 1}:H${rowIndex + 1}`);
+    worksheet.mergeCells(`A${rowIndex + 1}:G${rowIndex + 1}`);
     footerRow.getCell(1).value = `Total de ${filteredRecebimentos.length} recebimento(s)`;
     footerRow.getCell(1).font = { bold: true, size: 10 };
     footerRow.getCell(1).alignment = { horizontal: 'right' };
@@ -660,11 +626,9 @@ export default function Recebimentos() {
 
       const itens = itensData || [];
       
-      // Calcular altura necessária para este recebimento
-      const hasImage = !!r.foto_nota_url;
+      // Calcular altura necessária para este recebimento (sem imagem)
       const itensHeight = Math.max(itens.length * 6, 12);
-      const imageHeight = hasImage ? 100 : 0;
-      const blockHeight = 35 + itensHeight + imageHeight + 15;
+      const blockHeight = 35 + itensHeight + 20;
 
       // Nova página se necessário
       if (yPosition + blockHeight > pageHeight - 25) {
@@ -752,51 +716,13 @@ export default function Recebimentos() {
         itemY += 5;
       }
 
-      // Imagem da nota fiscal (proporcional)
+      // Indicar se tem nota fiscal anexada (sem imagem)
       if (r.foto_nota_url) {
-        itemY += 5;
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.text("Nota Fiscal:", margin + 8, itemY);
-        itemY += 5;
-        
-        const base64 = await imageUrlToBase64(r.foto_nota_url);
-        if (base64) {
-          try {
-            // Criar imagem temporaria para pegar dimensoes reais
-            const img = new Image();
-            await new Promise((resolve, reject) => {
-              img.onload = resolve;
-              img.onerror = reject;
-              img.src = base64;
-            });
-            
-            // Calcular proporcao mantendo aspecto
-            const maxWidth = pageWidth - (margin * 2) - 20;
-            const maxHeight = 90;
-            let imgWidth = img.width;
-            let imgHeight = img.height;
-            
-            // Escalar proporcionalmente
-            if (imgWidth > maxWidth) {
-              const ratio = maxWidth / imgWidth;
-              imgWidth = maxWidth;
-              imgHeight = imgHeight * ratio;
-            }
-            if (imgHeight > maxHeight) {
-              const ratio = maxHeight / imgHeight;
-              imgHeight = maxHeight;
-              imgWidth = imgWidth * ratio;
-            }
-            
-            doc.addImage(base64, "JPEG", margin + 10, itemY, imgWidth, imgHeight);
-            itemY += imgHeight + 5;
-          } catch {
-            doc.setTextColor(200, 100, 100);
-            doc.text("Erro ao carregar imagem", margin + 10, itemY + 10);
-            doc.setTextColor(0, 0, 0);
-          }
-        }
+        itemY += 3;
+        doc.setFontSize(8);
+        doc.setTextColor(59, 130, 246);
+        doc.text("Nota fiscal anexada (visualizar no Excel)", margin + 8, itemY);
+        doc.setTextColor(0, 0, 0);
       }
 
       yPosition += blockHeight;
