@@ -447,46 +447,87 @@ export default function Recebimentos() {
     }
   };
 
-  // Exportar para Excel com imagens embutidas
+  // Exportar para Excel com imagens grandes
   const exportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Recebimentos");
+    workbook.creator = 'Sistema de Recebimentos';
+    workbook.created = new Date();
+    
+    const worksheet = workbook.addWorksheet("Recebimentos", {
+      pageSetup: { paperSize: 9, orientation: 'landscape' }
+    });
 
-    // Definir colunas
-    worksheet.columns = [
-      { header: "Data", key: "data", width: 12 },
-      { header: "Fornecedor", key: "fornecedor", width: 25 },
-      { header: "Tipo", key: "tipo", width: 15 },
-      { header: "Itens", key: "itens", width: 40 },
-      { header: "Observação", key: "observacao", width: 25 },
-      { header: "Nota Fiscal", key: "nota", width: 25 },
-    ];
+    // Título
+    worksheet.mergeCells('A1:G1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = 'Relatório de Recebimentos';
+    titleCell.font = { bold: true, size: 18, color: { argb: 'FF1E3A5F' } };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.getRow(1).height = 35;
 
-    // Estilo do cabeçalho
-    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FF3B82F6" },
-    };
+    // Subtítulo com data
+    worksheet.mergeCells('A2:G2');
+    const subtitleCell = worksheet.getCell('A2');
+    subtitleCell.value = `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`;
+    subtitleCell.font = { italic: true, size: 10, color: { argb: 'FF666666' } };
+    subtitleCell.alignment = { horizontal: 'center' };
+    worksheet.getRow(2).height = 20;
 
-    let rowIndex = 2;
+    // Cabeçalho da tabela
+    const headerRow = worksheet.getRow(4);
+    const headers = ['#', 'Data', 'Fornecedor', 'Tipo', 'Itens Recebidos', 'Observação', 'Nota Fiscal'];
+    headers.forEach((header, index) => {
+      const cell = headerRow.getCell(index + 1);
+      cell.value = header;
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF1E3A5F' } },
+        bottom: { style: 'thin', color: { argb: 'FF1E3A5F' } },
+      };
+    });
+    headerRow.height = 25;
+
+    // Larguras das colunas
+    worksheet.getColumn(1).width = 5;   // #
+    worksheet.getColumn(2).width = 12;  // Data
+    worksheet.getColumn(3).width = 25;  // Fornecedor
+    worksheet.getColumn(4).width = 15;  // Tipo
+    worksheet.getColumn(5).width = 45;  // Itens
+    worksheet.getColumn(6).width = 25;  // Observação
+    worksheet.getColumn(7).width = 35;  // Nota Fiscal
+
+    let rowIndex = 5;
+    let contador = 1;
+    
     for (const r of filteredRecebimentos) {
       const { data: itensData } = await supabase
         .from("recebimento_itens")
         .select("*")
         .eq("recebimento_id", r.id);
 
-      const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join("; ") || "";
+      const itensStr = itensData?.map((i) => `• ${i.descricao} (${i.quantidade} ${i.unidade})`).join("\n") || "";
 
-      const row = worksheet.addRow({
-        data: format(new Date(r.data_recebimento), "dd/MM/yyyy"),
-        fornecedor: r.fornecedor,
-        tipo: getTipoLabel(r.tipo_recebimento),
-        itens: itensStr,
-        observacao: r.observacao || "",
-        nota: "",
-      });
+      const row = worksheet.getRow(rowIndex);
+      row.getCell(1).value = contador;
+      row.getCell(2).value = format(new Date(r.data_recebimento), "dd/MM/yyyy");
+      row.getCell(3).value = r.fornecedor;
+      row.getCell(4).value = getTipoLabel(r.tipo_recebimento);
+      row.getCell(5).value = itensStr;
+      row.getCell(5).alignment = { wrapText: true, vertical: 'top' };
+      row.getCell(6).value = r.observacao || "-";
+      row.getCell(7).value = "";
+
+      // Estilo alternado
+      const bgColor = contador % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF';
+      for (let i = 1; i <= 7; i++) {
+        row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+        row.getCell(i).border = {
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+        };
+        row.getCell(i).alignment = { ...row.getCell(i).alignment, vertical: 'middle' };
+      }
 
       // Adicionar imagem se existir
       if (r.foto_nota_url) {
@@ -503,27 +544,38 @@ export default function Recebimentos() {
               extension: imageData.extension,
             });
 
-            // Ajustar altura da linha para caber a imagem
-            row.height = 80;
+            // Altura maior para imagem
+            row.height = 120;
 
             worksheet.addImage(imageId, {
-              tl: { col: 5, row: rowIndex - 1 },
-              ext: { width: 100, height: 75 },
+              tl: { col: 6, row: rowIndex - 1 },
+              ext: { width: 150, height: 110 },
             });
-            console.log("Image added to Excel row:", rowIndex);
           } else {
-            row.getCell("nota").value = "Imagem indisponível";
+            row.getCell(7).value = "⚠️ Indisponível";
           }
         } catch (error) {
           console.error("Error adding image to Excel:", error);
-          row.getCell("nota").value = "Erro ao carregar";
+          row.getCell(7).value = "❌ Erro";
         }
+      } else {
+        row.height = Math.max(25, itensData?.length ? itensData.length * 15 + 10 : 25);
+        row.getCell(7).value = "Sem anexo";
+        row.getCell(7).font = { italic: true, color: { argb: 'FF999999' } };
       }
 
       rowIndex++;
+      contador++;
     }
 
-    // Gerar e baixar o arquivo
+    // Rodapé
+    const footerRow = worksheet.getRow(rowIndex + 1);
+    worksheet.mergeCells(`A${rowIndex + 1}:G${rowIndex + 1}`);
+    footerRow.getCell(1).value = `Total de ${filteredRecebimentos.length} recebimento(s)`;
+    footerRow.getCell(1).font = { bold: true, size: 10 };
+    footerRow.getCell(1).alignment = { horizontal: 'right' };
+
+    // Gerar e baixar
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const link = document.createElement("a");
@@ -532,21 +584,53 @@ export default function Recebimentos() {
     link.click();
     URL.revokeObjectURL(link.href);
 
-    toast.success("Excel com imagens exportado com sucesso!");
+    toast.success("Excel exportado com sucesso!");
   };
 
-  // Exportar para PDF com imagens inline
+  // Exportar para PDF profissional com imagens grandes
   const exportToPDF = async () => {
-    const doc = new jsPDF();
-
-    doc.setFontSize(18);
-    doc.text("Relatório de Recebimentos", 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 30);
-
-    let yPosition = 40;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
-    const marginBottom = 20;
+    const margin = 15;
+
+    // Função para adicionar cabeçalho
+    const addHeader = (pageNum: number) => {
+      // Fundo do cabeçalho
+      doc.setFillColor(30, 58, 95);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      
+      // Título
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("Relatório de Recebimentos", margin, 18);
+      
+      // Subtítulo
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`, margin, 28);
+      
+      // Número da página
+      doc.text(`Página ${pageNum}`, pageWidth - margin - 20, 28);
+      
+      doc.setTextColor(0, 0, 0);
+    };
+
+    // Função para adicionar rodapé
+    const addFooter = () => {
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Sistema de Gestão de Recebimentos", margin, pageHeight - 10);
+      doc.setTextColor(0, 0, 0);
+    };
+
+    let pageNum = 1;
+    addHeader(pageNum);
+    addFooter();
+    
+    let yPosition = 45;
+    let recebimentoNum = 1;
 
     for (const r of filteredRecebimentos) {
       const { data: itensData } = await supabase
@@ -554,54 +638,146 @@ export default function Recebimentos() {
         .select("*")
         .eq("recebimento_id", r.id);
 
-      const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join(", ") || "";
-
-      // Verificar se precisa de nova página
-      const blockHeight = r.foto_nota_url ? 90 : 35;
-      if (yPosition + blockHeight > pageHeight - marginBottom) {
-        doc.addPage();
-        yPosition = 20;
-      }
-
-      // Informações do recebimento
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text(`${r.fornecedor}`, 14, yPosition);
+      const itens = itensData || [];
       
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Data: ${format(new Date(r.data_recebimento), "dd/MM/yyyy")} | Tipo: ${getTipoLabel(r.tipo_recebimento)}`, 14, yPosition + 6);
-      doc.text(`Itens: ${itensStr.substring(0, 80)}${itensStr.length > 80 ? "..." : ""}`, 14, yPosition + 12);
-      if (r.observacao) {
-        doc.text(`Obs: ${r.observacao.substring(0, 60)}${r.observacao.length > 60 ? "..." : ""}`, 14, yPosition + 18);
+      // Calcular altura necessária para este recebimento
+      const hasImage = !!r.foto_nota_url;
+      const itensHeight = Math.max(itens.length * 6, 12);
+      const imageHeight = hasImage ? 100 : 0;
+      const blockHeight = 35 + itensHeight + imageHeight + 15;
+
+      // Nova página se necessário
+      if (yPosition + blockHeight > pageHeight - 25) {
+        doc.addPage();
+        pageNum++;
+        addHeader(pageNum);
+        addFooter();
+        yPosition = 45;
       }
 
-      // Adicionar imagem se existir
+      // Card container
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(margin, yPosition, pageWidth - (margin * 2), blockHeight - 10, 3, 3, 'F');
+      
+      // Borda esquerda colorida
+      const tipoColors: Record<string, [number, number, number]> = {
+        'consumiveis': [59, 130, 246],
+        'patrimonio': [16, 185, 129],
+        'epis': [245, 158, 11],
+        'materia_prima': [168, 85, 247],
+        'vendas': [239, 68, 68],
+      };
+      const borderColor = tipoColors[r.tipo_recebimento] || [107, 114, 128];
+      doc.setFillColor(...borderColor);
+      doc.rect(margin, yPosition, 4, blockHeight - 10, 'F');
+
+      // Número do recebimento
+      doc.setFillColor(...borderColor);
+      doc.circle(margin + 15, yPosition + 10, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(recebimentoNum), margin + 15, yPosition + 13, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+
+      // Fornecedor
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(r.fornecedor, margin + 28, yPosition + 12);
+
+      // Badge de tipo
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      const tipoLabel = getTipoLabel(r.tipo_recebimento);
+      const tipoWidth = doc.getTextWidth(tipoLabel) + 8;
+      doc.setFillColor(...borderColor);
+      doc.roundedRect(pageWidth - margin - tipoWidth - 5, yPosition + 5, tipoWidth, 10, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text(tipoLabel, pageWidth - margin - tipoWidth / 2 - 5, yPosition + 11.5, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+
+      // Data
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`📅 ${format(new Date(r.data_recebimento), "dd/MM/yyyy")}`, margin + 28, yPosition + 20);
+      doc.setTextColor(0, 0, 0);
+
+      // Itens
+      let itemY = yPosition + 28;
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Itens Recebidos:", margin + 8, itemY);
+      itemY += 6;
+      
+      doc.setFont("helvetica", "normal");
+      if (itens.length > 0) {
+        itens.forEach((item) => {
+          doc.text(`• ${item.descricao} — ${item.quantidade} ${item.unidade}`, margin + 12, itemY);
+          itemY += 5;
+        });
+      } else {
+        doc.setTextColor(150, 150, 150);
+        doc.text("Nenhum item registrado", margin + 12, itemY);
+        doc.setTextColor(0, 0, 0);
+        itemY += 5;
+      }
+
+      // Observação
+      if (r.observacao) {
+        itemY += 3;
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Obs: ${r.observacao}`, margin + 8, itemY);
+        doc.setTextColor(0, 0, 0);
+        itemY += 5;
+      }
+
+      // Imagem da nota fiscal (grande)
       if (r.foto_nota_url) {
+        itemY += 5;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("📄 Nota Fiscal:", margin + 8, itemY);
+        itemY += 5;
+        
         const base64 = await imageUrlToBase64(r.foto_nota_url);
         if (base64) {
           try {
-            doc.addImage(base64, "JPEG", 14, yPosition + 24, 60, 45);
-            yPosition += 80;
+            // Imagem grande ocupando boa parte da largura
+            const imgWidth = pageWidth - (margin * 2) - 20;
+            const imgHeight = 80;
+            doc.addImage(base64, "JPEG", margin + 10, itemY, imgWidth, imgHeight);
+            itemY += imgHeight + 5;
           } catch {
-            doc.text("Erro ao carregar imagem", 14, yPosition + 24);
-            yPosition += 35;
+            doc.setTextColor(200, 100, 100);
+            doc.text("❌ Erro ao carregar imagem", margin + 10, itemY + 10);
+            doc.setTextColor(0, 0, 0);
           }
-        } else {
-          yPosition += 25;
         }
-      } else {
-        yPosition += 25;
       }
 
-      // Linha separadora
-      doc.setDrawColor(200, 200, 200);
-      doc.line(14, yPosition, 196, yPosition);
-      yPosition += 10;
+      yPosition += blockHeight;
+      recebimentoNum++;
     }
 
+    // Resumo final
+    if (yPosition + 30 > pageHeight - 25) {
+      doc.addPage();
+      pageNum++;
+      addHeader(pageNum);
+      addFooter();
+      yPosition = 45;
+    }
+
+    doc.setFillColor(30, 58, 95);
+    doc.roundedRect(margin, yPosition + 5, pageWidth - (margin * 2), 20, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: ${filteredRecebimentos.length} recebimento(s)`, pageWidth / 2, yPosition + 17, { align: 'center' });
+
     doc.save(`recebimentos_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF com imagens exportado com sucesso!");
+    toast.success("PDF exportado com sucesso!");
   };
 
   // Filtrar recebimentos
