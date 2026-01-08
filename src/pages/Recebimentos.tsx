@@ -473,9 +473,9 @@ export default function Recebimentos() {
     subtitleCell.alignment = { horizontal: 'center' };
     worksheet.getRow(2).height = 20;
 
-    // Cabeçalho da tabela
+    // Cabecalho da tabela
     const headerRow = worksheet.getRow(4);
-    const headers = ['#', 'Data', 'Fornecedor', 'Tipo', 'Itens Recebidos', 'Observação', 'Nota Fiscal'];
+    const headers = ['#', 'Data', 'Fornecedor', 'Tipo', 'Itens Recebidos', 'Observacao', 'Nota Fiscal', 'Ver Imagem'];
     headers.forEach((header, index) => {
       const cell = headerRow.getCell(index + 1);
       cell.value = header;
@@ -494,9 +494,10 @@ export default function Recebimentos() {
     worksheet.getColumn(2).width = 12;  // Data
     worksheet.getColumn(3).width = 25;  // Fornecedor
     worksheet.getColumn(4).width = 15;  // Tipo
-    worksheet.getColumn(5).width = 45;  // Itens
-    worksheet.getColumn(6).width = 25;  // Observação
-    worksheet.getColumn(7).width = 35;  // Nota Fiscal
+    worksheet.getColumn(5).width = 40;  // Itens
+    worksheet.getColumn(6).width = 20;  // Observacao
+    worksheet.getColumn(7).width = 25;  // Nota Fiscal (miniatura)
+    worksheet.getColumn(8).width = 20;  // Ver Imagem (link)
 
     let rowIndex = 5;
     let contador = 1;
@@ -507,7 +508,7 @@ export default function Recebimentos() {
         .select("*")
         .eq("recebimento_id", r.id);
 
-      const itensStr = itensData?.map((i) => `• ${i.descricao} (${i.quantidade} ${i.unidade})`).join("\n") || "";
+      const itensStr = itensData?.map((i) => `- ${i.descricao} (${i.quantidade} ${i.unidade})`).join("\n") || "";
 
       const row = worksheet.getRow(rowIndex);
       row.getCell(1).value = contador;
@@ -518,10 +519,11 @@ export default function Recebimentos() {
       row.getCell(5).alignment = { wrapText: true, vertical: 'top' };
       row.getCell(6).value = r.observacao || "-";
       row.getCell(7).value = "";
+      row.getCell(8).value = "";
 
       // Estilo alternado
       const bgColor = contador % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF';
-      for (let i = 1; i <= 7; i++) {
+      for (let i = 1; i <= 8; i++) {
         row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
         row.getCell(i).border = {
           bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
@@ -529,7 +531,7 @@ export default function Recebimentos() {
         row.getCell(i).alignment = { ...row.getCell(i).alignment, vertical: 'middle' };
       }
 
-      // Adicionar imagem se existir
+      // Adicionar imagem e link se existir
       if (r.foto_nota_url) {
         try {
           const imageData = await imageUrlToArrayBuffer(r.foto_nota_url);
@@ -545,32 +547,50 @@ export default function Recebimentos() {
             });
 
             // Altura maior para imagem
-            row.height = 120;
+            row.height = 100;
 
             worksheet.addImage(imageId, {
               tl: { col: 6, row: rowIndex - 1 },
-              ext: { width: 150, height: 110 },
+              ext: { width: 120, height: 90 },
             });
+
+            // Adicionar link para ver imagem completa
+            const linkCell = row.getCell(8);
+            linkCell.value = {
+              text: 'ABRIR IMAGEM',
+              hyperlink: r.foto_nota_url,
+            };
+            linkCell.font = { 
+              color: { argb: 'FF0066CC' }, 
+              underline: true, 
+              bold: true,
+              size: 10 
+            };
+            linkCell.alignment = { horizontal: 'center', vertical: 'middle' };
           } else {
-            row.getCell(7).value = "⚠️ Indisponível";
+            row.getCell(7).value = "Indisponivel";
+            row.getCell(8).value = "-";
           }
         } catch (error) {
           console.error("Error adding image to Excel:", error);
-          row.getCell(7).value = "❌ Erro";
+          row.getCell(7).value = "Erro";
+          row.getCell(8).value = "-";
         }
       } else {
         row.height = Math.max(25, itensData?.length ? itensData.length * 15 + 10 : 25);
         row.getCell(7).value = "Sem anexo";
         row.getCell(7).font = { italic: true, color: { argb: 'FF999999' } };
+        row.getCell(8).value = "-";
+        row.getCell(8).font = { color: { argb: 'FF999999' } };
       }
 
       rowIndex++;
       contador++;
     }
 
-    // Rodapé
+    // Rodape
     const footerRow = worksheet.getRow(rowIndex + 1);
-    worksheet.mergeCells(`A${rowIndex + 1}:G${rowIndex + 1}`);
+    worksheet.mergeCells(`A${rowIndex + 1}:H${rowIndex + 1}`);
     footerRow.getCell(1).value = `Total de ${filteredRecebimentos.length} recebimento(s)`;
     footerRow.getCell(1).font = { bold: true, size: 10 };
     footerRow.getCell(1).alignment = { horizontal: 'right' };
@@ -699,7 +719,7 @@ export default function Recebimentos() {
       // Data
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text(`📅 ${format(new Date(r.data_recebimento), "dd/MM/yyyy")}`, margin + 28, yPosition + 20);
+      doc.text(`Data: ${format(new Date(r.data_recebimento), "dd/MM/yyyy")}`, margin + 28, yPosition + 20);
       doc.setTextColor(0, 0, 0);
 
       // Itens
@@ -712,7 +732,7 @@ export default function Recebimentos() {
       doc.setFont("helvetica", "normal");
       if (itens.length > 0) {
         itens.forEach((item) => {
-          doc.text(`• ${item.descricao} — ${item.quantidade} ${item.unidade}`, margin + 12, itemY);
+          doc.text(`- ${item.descricao} (${item.quantidade} ${item.unidade})`, margin + 12, itemY);
           itemY += 5;
         });
       } else {
@@ -722,7 +742,7 @@ export default function Recebimentos() {
         itemY += 5;
       }
 
-      // Observação
+      // Observacao
       if (r.observacao) {
         itemY += 3;
         doc.setFontSize(8);
@@ -732,25 +752,48 @@ export default function Recebimentos() {
         itemY += 5;
       }
 
-      // Imagem da nota fiscal (grande)
+      // Imagem da nota fiscal (proporcional)
       if (r.foto_nota_url) {
         itemY += 5;
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
-        doc.text("📄 Nota Fiscal:", margin + 8, itemY);
+        doc.text("Nota Fiscal:", margin + 8, itemY);
         itemY += 5;
         
         const base64 = await imageUrlToBase64(r.foto_nota_url);
         if (base64) {
           try {
-            // Imagem grande ocupando boa parte da largura
-            const imgWidth = pageWidth - (margin * 2) - 20;
-            const imgHeight = 80;
+            // Criar imagem temporaria para pegar dimensoes reais
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+              img.onload = resolve;
+              img.onerror = reject;
+              img.src = base64;
+            });
+            
+            // Calcular proporcao mantendo aspecto
+            const maxWidth = pageWidth - (margin * 2) - 20;
+            const maxHeight = 90;
+            let imgWidth = img.width;
+            let imgHeight = img.height;
+            
+            // Escalar proporcionalmente
+            if (imgWidth > maxWidth) {
+              const ratio = maxWidth / imgWidth;
+              imgWidth = maxWidth;
+              imgHeight = imgHeight * ratio;
+            }
+            if (imgHeight > maxHeight) {
+              const ratio = maxHeight / imgHeight;
+              imgHeight = maxHeight;
+              imgWidth = imgWidth * ratio;
+            }
+            
             doc.addImage(base64, "JPEG", margin + 10, itemY, imgWidth, imgHeight);
             itemY += imgHeight + 5;
           } catch {
             doc.setTextColor(200, 100, 100);
-            doc.text("❌ Erro ao carregar imagem", margin + 10, itemY + 10);
+            doc.text("Erro ao carregar imagem", margin + 10, itemY + 10);
             doc.setTextColor(0, 0, 0);
           }
         }
