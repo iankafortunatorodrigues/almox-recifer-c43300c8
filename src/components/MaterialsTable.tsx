@@ -256,25 +256,26 @@ export function MaterialsTable({
         </div>
       ) : (
       /* Desktop: Table View */
-      <div className="rounded-lg border bg-card overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12 sm:w-20">Foto</TableHead>
-              <TableHead className="min-w-[80px]">Código</TableHead>
-              <TableHead className="min-w-[150px]">Descrição</TableHead>
-              <TableHead className="hidden lg:table-cell">Categoria</TableHead>
-              <TableHead className="text-center min-w-[100px]">Qtd.</TableHead>
-              <TableHead className="text-center hidden md:table-cell">Mín.</TableHead>
-              <TableHead className="text-center hidden md:table-cell">Máx.</TableHead>
-              <TableHead className="text-center hidden md:table-cell text-primary">Comprar</TableHead>
-              <TableHead className="text-center hidden lg:table-cell">Valor Unit.</TableHead>
-              <TableHead className="text-center hidden lg:table-cell">Valor Total</TableHead>
-              <TableHead className="text-center hidden sm:table-cell">Status</TableHead>
-              <TableHead className="min-w-[120px]">Local</TableHead>
-              <TableHead className="text-center min-w-[80px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
+      <div className="rounded-lg border bg-card">
+        <div className="overflow-x-auto">
+          <Table className="min-w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-14 sticky left-0 bg-card z-10">Foto</TableHead>
+                <TableHead className="w-20">Código</TableHead>
+                <TableHead className="min-w-[120px] max-w-[200px]">Descrição</TableHead>
+                <TableHead className="hidden xl:table-cell w-24">Categoria</TableHead>
+                <TableHead className="text-center w-20">Qtd.</TableHead>
+                <TableHead className="text-center hidden lg:table-cell w-14">Mín.</TableHead>
+                <TableHead className="text-center hidden lg:table-cell w-14">Máx.</TableHead>
+                <TableHead className="text-center hidden xl:table-cell w-20 text-primary">Comprar</TableHead>
+                <TableHead className="text-center hidden xl:table-cell w-20">V.Unit.</TableHead>
+                <TableHead className="text-center hidden xl:table-cell w-20">V.Total</TableHead>
+                <TableHead className="text-center w-20">Status</TableHead>
+                <TableHead className="w-28">Local</TableHead>
+                <TableHead className="text-center w-32 sticky right-0 bg-card z-10">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {filteredMaterials.length === 0 ? (
               <TableRow>
@@ -289,47 +290,46 @@ export function MaterialsTable({
                 const status = getStockStatus(material);
                 return (
                   <TableRow key={material.id}>
-                    <TableCell>
+                    <TableCell className="sticky left-0 bg-card z-10">
                       {material.fotoUrl ? (
                         <img 
                           src={material.fotoUrl} 
                           alt={material.descricao}
-                          className="w-8 h-8 sm:w-12 sm:h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-10 h-10 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setSelectedImage({ url: material.fotoUrl!, alt: material.descricao })}
                           onError={(e) => {
-                            e.currentTarget.src = "https://via.placeholder.com/48?text=Sem+Foto";
+                            e.currentTarget.src = "https://via.placeholder.com/40?text=Sem";
                           }}
                         />
                       ) : (
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                          <span className="hidden sm:inline text-xs">Sem foto</span>
-                          <span className="sm:hidden">-</span>
+                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-[10px] text-muted-foreground">
+                          Sem
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium text-xs sm:text-sm">{material.codigo}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{material.descricao}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="font-medium text-xs">{material.codigo}</TableCell>
+                    <TableCell className="text-xs max-w-[200px] truncate" title={material.descricao}>{material.descricao}</TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       {material.categoria ? (
-                        <Badge variant="outline" className="text-xs">{material.categoria}</Badge>
+                        <Badge variant="outline" className="text-[10px]">{material.categoria}</Badge>
                       ) : (
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center font-semibold text-xs sm:text-sm">
+                    <TableCell className="text-center font-semibold text-xs">
                       {material.tipo === "consumivel" ? (
                         <span className="text-primary" title="Quantidade infinita">∞</span>
                       ) : (
-                        <>{material.quantidadeAtual} <span className="hidden sm:inline">{material.unidadeMedida}</span></>
+                        <>{material.quantidadeAtual} {material.unidadeMedida}</>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
+                    <TableCell className="text-center text-muted-foreground text-xs hidden lg:table-cell">
                       {material.tipo === "consumivel" ? "-" : material.estoqueMinimo}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground text-xs hidden md:table-cell">
+                    <TableCell className="text-center text-muted-foreground text-xs hidden lg:table-cell">
                       {material.tipo === "consumivel" ? "-" : material.estoqueMaximo || "-"}
                     </TableCell>
-                    <TableCell className="text-center hidden md:table-cell">
+                    <TableCell className="text-center hidden xl:table-cell">
                       {material.tipo === "consumivel" ? (
                         "-"
                       ) : material.estoqueMaximo && material.estoqueMaximo > material.quantidadeAtual ? (
@@ -342,10 +342,10 @@ export function MaterialsTable({
                               variant="ghost"
                               size="sm"
                               onClick={() => onAddToCart(material)}
-                              className="h-6 w-6 p-0 hover:bg-primary/10"
-                              title={`Adicionar ${material.estoqueMaximo - material.quantidadeAtual} unidades ao pedido de compra`}
+                              className="h-5 w-5 p-0 hover:bg-primary/10 min-h-0"
+                              title={`Adicionar ao pedido`}
                             >
-                              <ShoppingCart className="h-4 w-4 text-primary" />
+                              <ShoppingCart className="h-3 w-3 text-primary" />
                             </Button>
                           )}
                         </div>
@@ -353,32 +353,34 @@ export function MaterialsTable({
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center text-muted-foreground text-xs hidden lg:table-cell">
+                    <TableCell className="text-center text-muted-foreground text-xs hidden xl:table-cell">
                       {material.valorUnitario ? `R$ ${material.valorUnitario.toFixed(2)}` : "-"}
                     </TableCell>
-                    <TableCell className="text-center font-semibold text-xs hidden lg:table-cell">
+                    <TableCell className="text-center font-semibold text-xs hidden xl:table-cell">
                       {material.valorUnitario 
                         ? `R$ ${(material.valorUnitario * material.quantidadeAtual).toFixed(2)}`
                         : "-"}
                     </TableCell>
-                    <TableCell className="text-center hidden sm:table-cell">
-                      <Badge variant={status.variant} className="text-xs">
-                        {status.variant === "destructive" && <AlertTriangle className="h-3 w-3 mr-1" />}
+                    <TableCell className="text-center">
+                      <Badge variant={status.variant} className="text-[10px] px-1.5">
+                        {status.variant === "destructive" && <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />}
                         {status.label}
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewLocation(material)}
+                        className="gap-1 justify-start text-[10px] h-6 px-1 min-h-0"
+                      >
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate max-w-[80px]">{material.localizacao}</span>
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-center sticky right-0 bg-card z-10">
                       <div className="flex flex-col gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onViewLocation(material)}
-                          className="gap-1 justify-start text-xs h-7 px-2"
-                        >
-                          <MapPin className="h-3 w-3" />
-                          <span className="hidden sm:inline">{material.localizacao}</span>
-                          <span className="sm:hidden">{material.localizacao.slice(0, 8)}...</span>
-                        </Button>
+                        {/* Quick Actions */}
                         {onQuickAction && userRole !== "diretor" && userRole !== "compras" && (
                           <div className="flex gap-1">
                             {material.tipo === "estoque" ? (
@@ -387,8 +389,8 @@ export function MaterialsTable({
                                   variant="success"
                                   size="sm"
                                   onClick={() => onQuickAction(material, "entrada")}
-                                  title="Entrada rápida"
-                                  className="flex-1 h-6 px-1"
+                                  title="Entrada"
+                                  className="h-6 w-6 p-0 min-h-0"
                                 >
                                   <ArrowDownCircle className="h-3 w-3" />
                                 </Button>
@@ -396,8 +398,8 @@ export function MaterialsTable({
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => onQuickAction(material, "saida")}
-                                  title="Saída rápida"
-                                  className="flex-1 h-6 px-1"
+                                  title="Saída"
+                                  className="h-6 w-6 p-0 min-h-0"
                                 >
                                   <ArrowUpCircle className="h-3 w-3" />
                                 </Button>
@@ -407,11 +409,10 @@ export function MaterialsTable({
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => onQuickAction(material, "saida")}
-                                title="Saída rápida"
-                                className="w-full h-6 px-1"
+                                title="Saída"
+                                className="h-6 w-6 p-0 min-h-0"
                               >
                                 <ArrowUpCircle className="h-3 w-3" />
-                                <span className="hidden sm:inline text-xs ml-1">Saída</span>
                               </Button>
                             ) : (
                               <>
@@ -419,8 +420,8 @@ export function MaterialsTable({
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => onQuickAction(material, "emprestimo")}
-                                  title="Empréstimo rápido"
-                                  className="flex-1 h-6 px-1"
+                                  title="Empréstimo"
+                                  className="h-6 w-6 p-0 min-h-0"
                                 >
                                   <HandHelping className="h-3 w-3" />
                                 </Button>
@@ -428,8 +429,8 @@ export function MaterialsTable({
                                   variant="success"
                                   size="sm"
                                   onClick={() => onQuickAction(material, "devolucao")}
-                                  title="Devolução rápida"
-                                  className="flex-1 h-6 px-1"
+                                  title="Devolução"
+                                  className="h-6 w-6 p-0 min-h-0"
                                 >
                                   <Undo2 className="h-3 w-3" />
                                 </Button>
@@ -437,80 +438,29 @@ export function MaterialsTable({
                             )}
                           </div>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 flex-col">
+                        {/* Edit/Delete */}
                         <div className="flex gap-1">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onEdit(material)}
-                            className="gap-1 h-7 px-2 flex-1"
+                            className="h-6 w-6 p-0 min-h-0"
                             disabled={userRole === "diretor" || userRole === "compras"}
+                            title="Editar"
                           >
                             <Pencil className="h-3 w-3" />
-                            <span className="hidden sm:inline text-xs">Editar</span>
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => onDelete(material)}
-                            className="gap-1 h-7 px-2 flex-1"
+                            className="h-6 w-6 p-0 min-h-0"
                             disabled={userRole === "diretor" || userRole === "compras"}
+                            title="Excluir"
                           >
                             <Trash2 className="h-3 w-3" />
-                            <span className="hidden sm:inline text-xs">Excluir</span>
                           </Button>
                         </div>
-                        {userRole === "admin" && onToggleObsolete && (
-                          <Button
-                            variant={material.obsoleto ? "secondary" : "outline"}
-                            size="sm"
-                            onClick={() => onToggleObsolete(material)}
-                            className="gap-1 h-7 px-2 w-full"
-                            title={material.obsoleto ? "Remover de obsoleto" : "Marcar como obsoleto"}
-                          >
-                            <XCircle className="h-3 w-3" />
-                            <span className="text-xs">
-                              {material.obsoleto ? "Ativar" : "Obsoleto"}
-                            </span>
-                          </Button>
-                        )}
-                        {(userRole === "admin" || userRole === "compras") && onTogglePurchase && !material.obsoleto && (
-                          <div className="flex gap-1">
-                            <Button
-                              variant={material.statusCompra === "pendente" ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => onTogglePurchase(material, "pendente")}
-                              className="gap-1 h-7 px-2 flex-1"
-                              title="Marcar como pendente"
-                            >
-                              <ShoppingCart className="h-3 w-3" />
-                              <span className="hidden lg:inline text-xs">Pendente</span>
-                            </Button>
-                            <Button
-                              variant={material.statusCompra === "em_cotacao" ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => onTogglePurchase(material, "em_cotacao")}
-                              className="gap-1 h-7 px-2 flex-1"
-                              title="Marcar como em cotação"
-                            >
-                              <Clock className="h-3 w-3" />
-                              <span className="hidden lg:inline text-xs">Cotação</span>
-                            </Button>
-                            <Button
-                              variant={material.statusCompra === "comprado" ? "success" : "outline"}
-                              size="sm"
-                              onClick={() => onTogglePurchase(material, "comprado")}
-                              className="gap-1 h-7 px-2 flex-1"
-                              title="Marcar como comprado"
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                              <span className="hidden lg:inline text-xs">Comprado</span>
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -519,6 +469,7 @@ export function MaterialsTable({
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
       )}
       
