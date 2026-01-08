@@ -54,8 +54,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-import JSZip from "jszip";
+import ExcelJS from "exceljs";
 
 interface RecebimentoItem {
   id?: string;
@@ -420,73 +419,91 @@ export default function Recebimentos() {
     }
   };
 
-  // Exportar para Excel (ZIP com imagens)
+  // Exportar para Excel com imagens embutidas
   const exportToExcel = async () => {
-    const zip = new JSZip();
-    const notasFolder = zip.folder("notas_fiscais");
-    
-    const dataToExport = await Promise.all(
-      filteredRecebimentos.map(async (r, index) => {
-        const { data: itensData } = await supabase
-          .from("recebimento_itens")
-          .select("*")
-          .eq("recebimento_id", r.id);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Recebimentos");
 
-        const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join("; ") || "";
-
-        let imagemNome = "";
-        if (r.foto_nota_url && notasFolder) {
-          try {
-            const response = await fetch(r.foto_nota_url);
-            const blob = await response.blob();
-            const ext = r.foto_nota_url.split('.').pop()?.split('?')[0] || 'jpg';
-            imagemNome = `nota_${index + 1}_${r.fornecedor.replace(/[^a-zA-Z0-9]/g, '_')}.${ext}`;
-            notasFolder.file(imagemNome, blob);
-          } catch {
-            imagemNome = "Erro ao baixar";
-          }
-        }
-
-        return {
-          Data: format(new Date(r.data_recebimento), "dd/MM/yyyy"),
-          Fornecedor: r.fornecedor,
-          Tipo: getTipoLabel(r.tipo_recebimento),
-          Itens: itensStr,
-          Observação: r.observacao || "",
-          "Arquivo Nota Fiscal": imagemNome ? `notas_fiscais/${imagemNome}` : "",
-        };
-      })
-    );
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    
-    // Ajustar largura das colunas
-    ws["!cols"] = [
-      { wch: 12 }, // Data
-      { wch: 25 }, // Fornecedor
-      { wch: 15 }, // Tipo
-      { wch: 40 }, // Itens
-      { wch: 25 }, // Observação
-      { wch: 40 }, // Arquivo Nota Fiscal
+    // Definir colunas
+    worksheet.columns = [
+      { header: "Data", key: "data", width: 12 },
+      { header: "Fornecedor", key: "fornecedor", width: 25 },
+      { header: "Tipo", key: "tipo", width: 15 },
+      { header: "Itens", key: "itens", width: 40 },
+      { header: "Observação", key: "observacao", width: 25 },
+      { header: "Nota Fiscal", key: "nota", width: 25 },
     ];
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Recebimentos");
-    
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    zip.file(`recebimentos_${format(new Date(), "yyyy-MM-dd")}.xlsx`, excelBuffer);
+    // Estilo do cabeçalho
+    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF3B82F6" },
+    };
 
-    const zipBlob = await zip.generateAsync({ type: "blob" });
+    let rowIndex = 2;
+    for (const r of filteredRecebimentos) {
+      const { data: itensData } = await supabase
+        .from("recebimento_itens")
+        .select("*")
+        .eq("recebimento_id", r.id);
+
+      const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join("; ") || "";
+
+      const row = worksheet.addRow({
+        data: format(new Date(r.data_recebimento), "dd/MM/yyyy"),
+        fornecedor: r.fornecedor,
+        tipo: getTipoLabel(r.tipo_recebimento),
+        itens: itensStr,
+        observacao: r.observacao || "",
+        nota: "",
+      });
+
+      // Adicionar imagem se existir
+      if (r.foto_nota_url) {
+        try {
+          const response = await fetch(r.foto_nota_url);
+          const blob = await response.blob();
+          const arrayBuffer = await blob.arrayBuffer();
+          const base64 = btoa(
+            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+          );
+
+          const ext = r.foto_nota_url.toLowerCase().includes(".png") ? "png" : "jpeg";
+          const imageId = workbook.addImage({
+            base64: base64,
+            extension: ext,
+          });
+
+          // Ajustar altura da linha para caber a imagem
+          row.height = 80;
+
+          worksheet.addImage(imageId, {
+            tl: { col: 5, row: rowIndex - 1 },
+            ext: { width: 100, height: 75 },
+          });
+        } catch {
+          row.getCell("nota").value = "Erro ao carregar";
+        }
+      }
+
+      rowIndex++;
+    }
+
+    // Gerar e baixar o arquivo
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(zipBlob);
-    link.download = `recebimentos_${format(new Date(), "yyyy-MM-dd")}.zip`;
+    link.href = URL.createObjectURL(blob);
+    link.download = `recebimentos_${format(new Date(), "yyyy-MM-dd")}.xlsx`;
     link.click();
     URL.revokeObjectURL(link.href);
-    
-    toast.success("Excel + Notas Fiscais exportados com sucesso!");
+
+    toast.success("Excel com imagens exportado com sucesso!");
   };
 
-  // Exportar para PDF
+  // Exportar para PDF com imagens inline
   const exportToPDF = async () => {
     const doc = new jsPDF();
 
@@ -495,64 +512,64 @@ export default function Recebimentos() {
     doc.setFontSize(10);
     doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 30);
 
-    const tableData = await Promise.all(
-      filteredRecebimentos.map(async (r) => {
-        const { data: itensData } = await supabase
-          .from("recebimento_itens")
-          .select("*")
-          .eq("recebimento_id", r.id);
+    let yPosition = 40;
+    const pageHeight = doc.internal.pageSize.height;
+    const marginBottom = 20;
 
-        const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade})`).join(", ") || "";
-
-        return [
-          format(new Date(r.data_recebimento), "dd/MM/yyyy"),
-          r.fornecedor,
-          getTipoLabel(r.tipo_recebimento),
-          itensStr.substring(0, 50) + (itensStr.length > 50 ? "..." : ""),
-          r.observacao?.substring(0, 30) || "-",
-        ];
-      })
-    );
-
-    autoTable(doc, {
-      head: [["Data", "Fornecedor", "Tipo", "Itens", "Obs"]],
-      body: tableData,
-      startY: 38,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
-    });
-
-    // Adicionar imagens das notas fiscais em páginas separadas
-    let hasImages = false;
     for (const r of filteredRecebimentos) {
+      const { data: itensData } = await supabase
+        .from("recebimento_itens")
+        .select("*")
+        .eq("recebimento_id", r.id);
+
+      const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join(", ") || "";
+
+      // Verificar se precisa de nova página
+      const blockHeight = r.foto_nota_url ? 90 : 35;
+      if (yPosition + blockHeight > pageHeight - marginBottom) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      // Informações do recebimento
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${r.fornecedor}`, 14, yPosition);
+      
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Data: ${format(new Date(r.data_recebimento), "dd/MM/yyyy")} | Tipo: ${getTipoLabel(r.tipo_recebimento)}`, 14, yPosition + 6);
+      doc.text(`Itens: ${itensStr.substring(0, 80)}${itensStr.length > 80 ? "..." : ""}`, 14, yPosition + 12);
+      if (r.observacao) {
+        doc.text(`Obs: ${r.observacao.substring(0, 60)}${r.observacao.length > 60 ? "..." : ""}`, 14, yPosition + 18);
+      }
+
+      // Adicionar imagem se existir
       if (r.foto_nota_url) {
         const base64 = await imageUrlToBase64(r.foto_nota_url);
         if (base64) {
-          if (!hasImages) {
-            doc.addPage();
-            doc.setFontSize(14);
-            doc.text("Anexos - Notas Fiscais", 14, 20);
-            hasImages = true;
-          } else {
-            doc.addPage();
-          }
-          
-          doc.setFontSize(10);
-          doc.text(`Fornecedor: ${r.fornecedor}`, 14, 35);
-          doc.text(`Data: ${format(new Date(r.data_recebimento), "dd/MM/yyyy")}`, 14, 42);
-          
           try {
-            // Adicionar imagem com tamanho proporcional
-            doc.addImage(base64, "JPEG", 14, 50, 180, 0);
-          } catch (imgError) {
-            doc.text("Erro ao carregar imagem", 14, 55);
+            doc.addImage(base64, "JPEG", 14, yPosition + 24, 60, 45);
+            yPosition += 80;
+          } catch {
+            doc.text("Erro ao carregar imagem", 14, yPosition + 24);
+            yPosition += 35;
           }
+        } else {
+          yPosition += 25;
         }
+      } else {
+        yPosition += 25;
       }
+
+      // Linha separadora
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, yPosition, 196, yPosition);
+      yPosition += 10;
     }
 
     doc.save(`recebimentos_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF exportado com sucesso!");
+    toast.success("PDF com imagens exportado com sucesso!");
   };
 
   // Filtrar recebimentos
