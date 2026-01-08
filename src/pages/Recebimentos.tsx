@@ -406,15 +406,43 @@ export default function Recebimentos() {
   // Converter imagem URL para base64
   const imageUrlToBase64 = async (url: string): Promise<string | null> => {
     try {
-      const response = await fetch(url);
+      console.log("Fetching image:", url);
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) {
+        console.error("Failed to fetch image:", response.status);
+        return null;
+      }
       const blob = await response.blob();
+      console.log("Image blob size:", blob.size, "type:", blob.type);
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => resolve(null);
+        reader.onloadend = () => {
+          console.log("Image converted to base64");
+          resolve(reader.result as string);
+        };
+        reader.onerror = (e) => {
+          console.error("FileReader error:", e);
+          resolve(null);
+        };
         reader.readAsDataURL(blob);
       });
-    } catch {
+    } catch (error) {
+      console.error("Error converting image:", error);
+      return null;
+    }
+  };
+
+  // Converter imagem para ArrayBuffer (para Excel)
+  const imageUrlToArrayBuffer = async (url: string): Promise<{ buffer: ArrayBuffer; extension: "png" | "jpeg" } | null> => {
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const extension = blob.type.includes("png") ? "png" : "jpeg";
+      return { buffer: arrayBuffer, extension };
+    } catch (error) {
+      console.error("Error fetching image for Excel:", error);
       return null;
     }
   };
@@ -463,27 +491,31 @@ export default function Recebimentos() {
       // Adicionar imagem se existir
       if (r.foto_nota_url) {
         try {
-          const response = await fetch(r.foto_nota_url);
-          const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
-          const base64 = btoa(
-            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-          );
+          const imageData = await imageUrlToArrayBuffer(r.foto_nota_url);
+          if (imageData) {
+            const uint8Array = new Uint8Array(imageData.buffer);
+            const base64 = btoa(
+              uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), "")
+            );
 
-          const ext = r.foto_nota_url.toLowerCase().includes(".png") ? "png" : "jpeg";
-          const imageId = workbook.addImage({
-            base64: base64,
-            extension: ext,
-          });
+            const imageId = workbook.addImage({
+              base64: base64,
+              extension: imageData.extension,
+            });
 
-          // Ajustar altura da linha para caber a imagem
-          row.height = 80;
+            // Ajustar altura da linha para caber a imagem
+            row.height = 80;
 
-          worksheet.addImage(imageId, {
-            tl: { col: 5, row: rowIndex - 1 },
-            ext: { width: 100, height: 75 },
-          });
-        } catch {
+            worksheet.addImage(imageId, {
+              tl: { col: 5, row: rowIndex - 1 },
+              ext: { width: 100, height: 75 },
+            });
+            console.log("Image added to Excel row:", rowIndex);
+          } else {
+            row.getCell("nota").value = "Imagem indisponível";
+          }
+        } catch (error) {
+          console.error("Error adding image to Excel:", error);
           row.getCell("nota").value = "Erro ao carregar";
         }
       }
