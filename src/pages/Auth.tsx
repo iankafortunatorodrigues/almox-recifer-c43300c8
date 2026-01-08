@@ -196,16 +196,14 @@ export default function Auth() {
             Faça login ou crie sua conta para gerenciar seu estoque
           </CardDescription>
           
-          {showInstallPrompt && (
-            <Button
-              onClick={handleInstallClick}
-              variant="outline"
-              className="mt-4 w-full"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Instalar App no Dispositivo
-            </Button>
-          )}
+          <Button
+            onClick={handleInstallClick}
+            variant="outline"
+            className="mt-4 w-full"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Instalar App no Dispositivo
+          </Button>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
