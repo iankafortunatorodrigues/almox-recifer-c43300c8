@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,7 @@ interface Recebimento {
   observacao?: string;
   created_at: string;
   itens?: RecebimentoItem[];
+  usuario_nome?: string;
 }
 
 interface Filters {
@@ -88,6 +90,8 @@ const ACTION_PASSWORD = "200991";
 export default function Recebimentos() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, isFinanceiro, isAlmoxarife, role } = useUserRole();
+  const canEdit = isAdmin || isFinanceiro || isAlmoxarife;
   const [recebimentos, setRecebimentos] = useState<Recebimento[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -129,11 +133,17 @@ export default function Recebimentos() {
     try {
       const { data, error } = await supabase
         .from("recebimentos")
-        .select("*")
+        .select("*, profiles:user_id(nome)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setRecebimentos(data || []);
+      
+      // Map data to include usuario_nome
+      const mappedData = (data || []).map((r: any) => ({
+        ...r,
+        usuario_nome: r.profiles?.nome || "Usuário não identificado"
+      }));
+      setRecebimentos(mappedData);
     } catch (error) {
       console.error("Erro ao buscar recebimentos:", error);
       toast.error("Erro ao carregar recebimentos");
@@ -1011,20 +1021,22 @@ export default function Recebimentos() {
                 PDF
               </Button>
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Registrar Recebimento</DialogTitle>
-                  </DialogHeader>
-                  {renderForm(false)}
-                </DialogContent>
-              </Dialog>
+              {canEdit && (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Registrar Recebimento</DialogTitle>
+                    </DialogHeader>
+                    {renderForm(false)}
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </div>
@@ -1120,6 +1132,7 @@ export default function Recebimentos() {
                       <TableHead>Fornecedor</TableHead>
                       <TableHead>N° Nota</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Registrado por</TableHead>
                       <TableHead>Observação</TableHead>
                       <TableHead className="text-center">Foto Nota</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -1143,6 +1156,9 @@ export default function Recebimentos() {
                             {getTipoLabel(recebimento.tipo_recebimento)}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {recebimento.usuario_nome || "-"}
+                        </TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {recebimento.observacao || "-"}
                         </TableCell>
@@ -1164,20 +1180,24 @@ export default function Recebimentos() {
                             <Button variant="ghost" size="sm" onClick={() => viewRecebimento(recebimento)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => requestAction("edit", recebimento.id)}
-                            >
-                              <Pencil className="h-4 w-4 text-blue-500" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => requestAction("delete", recebimento.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            {canEdit && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => requestAction("edit", recebimento.id)}
+                                >
+                                  <Pencil className="h-4 w-4 text-blue-500" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => requestAction("delete", recebimento.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1220,6 +1240,10 @@ export default function Recebimentos() {
                   <Badge variant={getTipoBadgeVariant(selectedRecebimento.tipo_recebimento) as any}>
                     {getTipoLabel(selectedRecebimento.tipo_recebimento)}
                   </Badge>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Registrado por</Label>
+                  <p className="font-medium">{selectedRecebimento.usuario_nome || "-"}</p>
                 </div>
               </div>
 
