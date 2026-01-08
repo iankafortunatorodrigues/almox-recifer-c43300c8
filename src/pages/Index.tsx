@@ -442,6 +442,48 @@ const Index = () => {
     toast.success(`${typeLabels[type]} registrada com sucesso!`);
   };
 
+  // Handler para entrada em lote de múltiplos materiais
+  const handleBatchMovement = async (movements: {
+    materialId: string;
+    quantidade: number;
+    responsavel: string;
+    observacao?: string;
+  }[]) => {
+    if (!user) return;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const movementData of movements) {
+      const { error: movementError } = await supabase
+        .from("movimentacoes")
+        .insert({
+          user_id: user.id,
+          material_id: movementData.materialId,
+          tipo: "entrada",
+          quantidade: movementData.quantidade,
+          responsavel: movementData.responsavel,
+          observacao: movementData.observacao
+        });
+
+      if (movementError) {
+        console.error("Erro ao inserir movimentação:", movementError);
+        errorCount++;
+      } else {
+        successCount++;
+      }
+    }
+
+    await Promise.all([loadMaterials(), loadMovements()]);
+    setIsEntradaOpen(false);
+
+    if (errorCount > 0) {
+      toast.warning(`${successCount} entrada(s) registrada(s), ${errorCount} erro(s)`);
+    } else {
+      toast.success(`${successCount} entrada(s) registrada(s) com sucesso!`);
+    }
+  };
+
   const handleUpdateMovement = async (movementData: {
     materialId: string;
     quantidade: number;
@@ -967,6 +1009,7 @@ const Index = () => {
               setQuickActionMaterial(null);
               setQuickActionType(null);
             }}
+            onSubmitBatch={handleBatchMovement}
             onCancel={() => {
               setIsEntradaOpen(false);
               setQuickActionMaterial(null);
