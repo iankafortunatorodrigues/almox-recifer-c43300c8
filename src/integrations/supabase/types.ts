@@ -189,6 +189,30 @@ export type Database = {
           },
         ]
       }
+      password_changes: {
+        Row: {
+          changed_at: string
+          id: string
+          user_email: string
+          user_id: string
+          user_nome: string | null
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          user_email: string
+          user_id: string
+          user_nome?: string | null
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          user_email?: string
+          user_id?: string
+          user_nome?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
