@@ -997,36 +997,36 @@ export default function Recebimentos() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-                <ArrowLeft className="h-5 w-5" />
+    <div className="min-h-screen min-h-[100dvh] bg-background">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 h-9 w-9">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <div className="flex items-center gap-2">
-                <Package className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold">Recebimento de Materiais</h1>
+              <div className="flex items-center gap-2 min-w-0">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate">Recebimentos</h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={exportToExcel}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Excel
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={exportToExcel} className="h-8 sm:h-9 px-2 sm:px-3">
+                <FileSpreadsheet className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Excel</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={exportToPDF}>
-                <FileText className="h-4 w-4 mr-2" />
-                PDF
+              <Button variant="outline" size="sm" onClick={exportToPDF} className="h-8 sm:h-9 px-2 sm:px-3">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">PDF</span>
               </Button>
 
               {canEdit && (
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo
+                    <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-1">Novo</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1042,7 +1042,7 @@ export default function Recebimentos() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         {/* Filtros */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
