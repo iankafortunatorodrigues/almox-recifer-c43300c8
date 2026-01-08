@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, AlertTriangle, Pencil, ArrowDownCircle, ArrowUpCircle, HandHelping, Undo2, Download, FileSpreadsheet, Trash2, ShoppingCart, CheckCircle, Clock, XCircle } from "lucide-react";
 import { ImageDialog } from "@/components/ImageDialog";
 import { MaterialsFilter } from "@/components/MaterialsFilter";
+import { MaterialCard } from "@/components/MaterialCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -61,6 +63,7 @@ export function MaterialsTable({
   userRole
 }: MaterialsTableProps) {
   const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
+  const isMobile = useIsMobile();
 
   const uniqueLocations = Array.from(new Set(materials.map((m) => m.localizacao))).sort();
   const uniqueCategories = Array.from(new Set(materials.map((m) => m.categoria).filter(Boolean))).sort() as string[];
@@ -224,6 +227,35 @@ export function MaterialsTable({
         </Button>
       </div>
       
+      {/* Mobile: Cards View */}
+      {isMobile ? (
+        <div className="space-y-3">
+          {filteredMaterials.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground bg-card rounded-lg border">
+              {materials.length === 0 
+                ? "Nenhum material cadastrado ainda"
+                : "Nenhum material encontrado com os filtros aplicados"}
+            </div>
+          ) : (
+            filteredMaterials.map((material) => (
+              <MaterialCard
+                key={material.id}
+                material={material}
+                onViewLocation={onViewLocation}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onQuickAction={onQuickAction}
+                onTogglePurchase={onTogglePurchase}
+                onToggleObsolete={onToggleObsolete}
+                onAddToCart={onAddToCart}
+                onImageClick={(url, alt) => setSelectedImage({ url, alt })}
+                userRole={userRole}
+              />
+            ))
+          )}
+        </div>
+      ) : (
+      /* Desktop: Table View */
       <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
@@ -488,6 +520,7 @@ export function MaterialsTable({
           </TableBody>
         </Table>
       </div>
+      )}
       
       {selectedImage && (
         <ImageDialog
