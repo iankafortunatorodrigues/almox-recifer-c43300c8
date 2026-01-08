@@ -486,26 +486,24 @@ const Reports = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="Recifer Logo" className="h-16 w-16 object-contain" />
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold">Relatórios</h1>
-                <p className="text-muted-foreground text-sm">Sistema de Almoxarifado</p>
+    <div className="min-h-screen min-h-[100dvh] bg-background">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 h-9 w-9">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+              <div className="flex items-center gap-2 min-w-0">
+                <img src={logo} alt="Recifer Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0" />
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate">Relatórios</h1>
               </div>
             </div>
-            <Button variant="outline" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
           </div>
         </div>
       </header>
 
-      <main className="p-4 sm:p-6">
+      <main className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Período:</span>

@@ -231,22 +231,22 @@ export default function Suppliers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen min-h-[100dvh] bg-background">
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/purchase-orders")} className="shrink-0">
-                <ArrowLeft className="h-5 w-5" />
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/purchase-orders")} className="shrink-0 h-9 w-9">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
               <div className="flex items-center gap-2 min-w-0">
                 <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
-                <h1 className="text-lg sm:text-xl font-bold truncate">Fornecedores</h1>
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate">Fornecedores</h1>
               </div>
             </div>
             {canManage && (
-              <Button onClick={handleOpenNew} size="sm" className="gap-1.5 shrink-0">
+              <Button onClick={handleOpenNew} size="sm" className="gap-1.5 shrink-0 h-8 sm:h-9">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Novo Fornecedor</span>
                 <span className="sm:hidden">Novo</span>
@@ -257,7 +257,7 @@ export default function Suppliers() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         {/* Search */}
         <Card className="p-4 mb-6">
           <div className="relative">

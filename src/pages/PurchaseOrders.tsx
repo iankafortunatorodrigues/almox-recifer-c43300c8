@@ -623,28 +623,28 @@ export default function PurchaseOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen min-h-[100dvh] bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
-                <ArrowLeft className="h-5 w-5" />
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 h-9 w-9">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold truncate">Compras e Suprimentos</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                  Gestão completa de pedidos de compra
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate">Compras e Suprimentos</h1>
+                <p className="text-xs text-muted-foreground hidden sm:block truncate">
+                  Gestão de pedidos de compra
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/suppliers")}
-                className="hidden md:flex gap-1.5"
+                className="hidden md:flex gap-1.5 h-8 sm:h-9"
               >
                 <Building2 className="h-4 w-4" />
                 <span className="hidden lg:inline">Fornecedores</span>
@@ -653,13 +653,13 @@ export default function PurchaseOrders() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="gap-1.5"
+                className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3"
               >
                 <Filter className="h-4 w-4" />
                 <span className="hidden sm:inline">Filtros</span>
               </Button>
               {canCreate && (
-                <Button size="sm" onClick={() => setShowNewOrderDialog(true)} className="gap-1.5">
+                <Button size="sm" onClick={() => setShowNewOrderDialog(true)} className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3">
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Novo Pedido</span>
                 </Button>
@@ -669,7 +669,7 @@ export default function PurchaseOrders() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-4 space-y-4">
+      <main className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4">
         {/* Dashboard Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {(["pedido", "cotacao", "aprovacao", "comprado", "cancelado"] as const).map(
