@@ -19,7 +19,13 @@ serve(async (req) => {
     );
 
     // Verify the requesting user is an admin
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Não autorizado - token não fornecido" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const token = authHeader.replace("Bearer ", "");
     
     const { data: { user: requestingUser }, error: userError } = await supabaseAdmin.auth.getUser(token);
