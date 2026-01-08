@@ -710,7 +710,7 @@ const Index = () => {
           </div>
           
           {/* Action Buttons - Responsive Grid */}
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             <Button 
               onClick={() => setIsAddMaterialOpen(true)} 
               size="sm"
@@ -803,7 +803,7 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="stock-materials" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="stock-materials" className="text-xs sm:text-sm py-2">
               <span className="hidden sm:inline">Materiais de Estoque</span>
               <span className="sm:hidden">Estoque</span>
