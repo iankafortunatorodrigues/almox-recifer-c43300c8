@@ -1,16 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Material } from "@/types/material";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MaterialFormProps {
   onSubmit: (material: Omit<Material, "id" | "dataCadastro">) => void;
   onCancel: () => void;
   initialData?: Material;
 }
+
+const getCodePrefix = (tipo: string): string => {
+  switch (tipo) {
+    case "estoque": return "EST";
+    case "consumivel": return "CONS";
+    case "emprestimo": return "EMP";
+    default: return "MAT";
+  }
+};
+
+const generateNextCode = async (tipo: string): Promise<string> => {
+  const prefix = getCodePrefix(tipo);
+  
+  // Buscar todos os códigos existentes com esse prefixo
+  const { data, error } = await supabase
+    .from("materials")
+    .select("codigo")
+    .ilike("codigo", `${prefix}%`);
+
+  if (error) {
+    console.error("Erro ao buscar códigos:", error);
+    return `${prefix}001`;
+  }
+
+  // Extrair números dos códigos existentes
+  const numbers = (data || [])
+    .map(m => {
+      const match = m.codigo.match(new RegExp(`^${prefix}(\\d+)$`, "i"));
+      return match ? parseInt(match[1], 10) : 0;
+    })
+    .filter(n => n > 0);
+
+  // Encontrar o próximo número disponível
+  const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+  const nextNumber = maxNumber + 1;
+  
+  return `${prefix}${nextNumber.toString().padStart(3, "0")}`;
+};
 
 export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormProps) {
   const [formData, setFormData] = useState({
@@ -30,6 +69,20 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [generatingCode, setGeneratingCode] = useState(false);
+
+  // Gerar código automático quando o tipo mudar (apenas para novos materiais)
+  useEffect(() => {
+    if (!initialData) {
+      const generateCode = async () => {
+        setGeneratingCode(true);
+        const newCode = await generateNextCode(formData.tipo);
+        setFormData(prev => ({ ...prev, codigo: newCode }));
+        setGeneratingCode(false);
+      };
+      generateCode();
+    }
+  }, [formData.tipo, initialData]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -134,10 +187,17 @@ export function MaterialForm({ onSubmit, onCancel, initialData }: MaterialFormPr
         <Label htmlFor="codigo">Código do Material</Label>
         <Input
           id="codigo"
-          value={formData.codigo}
+          value={generatingCode ? "Gerando..." : formData.codigo}
           onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
           required
+          readOnly={!initialData}
+          className={!initialData ? "bg-muted cursor-not-allowed" : ""}
         />
+        {!initialData && (
+          <p className="text-xs text-muted-foreground">
+            Código gerado automaticamente baseado no tipo de material
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
