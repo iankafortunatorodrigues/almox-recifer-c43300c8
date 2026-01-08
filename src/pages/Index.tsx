@@ -710,79 +710,81 @@ const Index = () => {
           </div>
           
           {/* Action Buttons - Responsive Grid */}
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          <div className="mt-3 sm:mt-4 grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 sm:gap-2">
             <Button 
               onClick={() => setIsAddMaterialOpen(true)} 
               size="sm"
               disabled={role === "compras" || role === "diretor"}
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0"
             >
-              <Plus className="h-4 w-4" />
-              <span className="truncate">Novo Material</span>
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate hidden sm:inline">Novo Material</span>
+              <span className="truncate sm:hidden">Novo</span>
             </Button>
             <Button 
               onClick={() => setIsEntradaOpen(true)} 
               variant="default" 
               size="sm"
-              className="gap-1.5 bg-green-600 hover:bg-green-700"
+              className="gap-1 bg-green-600 hover:bg-green-700 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0"
               disabled={role === "compras" || role === "diretor"}
             >
-              <ArrowDownCircle className="h-4 w-4" />
+              <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="truncate">Entrada</span>
             </Button>
             <Button 
               onClick={() => setIsSaidaOpen(true)} 
               variant="destructive" 
               size="sm"
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0"
               disabled={role === "compras" || role === "diretor"}
             >
-              <ArrowUpCircle className="h-4 w-4" />
+              <ArrowUpCircle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="truncate">Saída</span>
             </Button>
             <Button 
               onClick={() => navigate("/purchase-orders")} 
               variant="outline" 
               size="sm"
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0"
             >
-              <ShoppingCart className="h-4 w-4" />
-              <span className="truncate">Compras</span>
+              <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate hidden sm:inline">Compras</span>
+              <span className="truncate sm:hidden">Comp.</span>
             </Button>
             <Button 
               onClick={() => navigate("/suppliers")} 
               variant="outline" 
               size="sm"
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0 hidden sm:flex"
             >
-              <Package className="h-4 w-4" />
-              <span className="truncate">Fornecedores</span>
+              <Package className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Fornec.</span>
             </Button>
             <Button 
               onClick={() => navigate("/reports")} 
               variant="outline" 
               size="sm"
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0 hidden sm:flex"
             >
-              <FileBarChart className="h-4 w-4" />
-              <span className="truncate">Relatórios</span>
+              <FileBarChart className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Relat.</span>
             </Button>
             <Button 
               onClick={() => navigate("/settings")} 
               variant="outline" 
               size="sm"
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0 hidden sm:flex"
             >
-              <Settings2 className="h-4 w-4" />
+              <Settings2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="truncate">Config.</span>
             </Button>
             <Button 
               onClick={handleInstallClick} 
               variant="outline" 
               size="sm"
-              className="gap-1.5"
+              className="gap-1 text-[10px] sm:text-sm h-8 sm:h-9 px-2 sm:px-3 min-h-0 hidden sm:flex"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="truncate">Instalar</span>
             </Button>
           </div>
@@ -803,24 +805,28 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="stock-materials" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger value="stock-materials" className="text-xs sm:text-sm py-2">
+          <TabsList className="grid w-full grid-cols-5 h-auto gap-1">
+            <TabsTrigger value="stock-materials" className="text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 h-auto min-h-0">
               <span className="hidden sm:inline">Materiais de Estoque</span>
               <span className="sm:hidden">Estoque</span>
             </TabsTrigger>
-            <TabsTrigger value="loan-materials" className="text-xs sm:text-sm py-2">
+            <TabsTrigger value="loan-materials" className="text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 h-auto min-h-0">
               <span className="hidden sm:inline">Materiais de Empréstimo</span>
-              <span className="sm:hidden">Empréstimo</span>
+              <span className="sm:hidden">Emprést.</span>
             </TabsTrigger>
-            <TabsTrigger value="consumables" className="text-xs sm:text-sm py-2">
+            <TabsTrigger value="consumables" className="text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 h-auto min-h-0">
               <span className="hidden sm:inline">Consumíveis</span>
-              <span className="sm:hidden">Consumíveis</span>
+              <span className="sm:hidden">Consum.</span>
             </TabsTrigger>
-            <TabsTrigger value="purchases" className="text-xs sm:text-sm py-2">
-              <ShoppingBag className="h-4 w-4 mr-1" />
-              Compras
+            <TabsTrigger value="purchases" className="text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 h-auto min-h-0">
+              <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+              <span className="hidden sm:inline">Compras</span>
+              <span className="sm:hidden">Comp.</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-xs sm:text-sm py-2">Histórico</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] sm:text-sm py-1.5 sm:py-2 px-1 sm:px-3 h-auto min-h-0">
+              <span className="hidden sm:inline">Histórico</span>
+              <span className="sm:hidden">Hist.</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="stock-materials" className="space-y-6">
