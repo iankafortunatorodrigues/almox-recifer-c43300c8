@@ -70,6 +70,7 @@ interface Recebimento {
   tipo_recebimento: string;
   data_recebimento: string;
   foto_nota_url?: string;
+  numero_nota?: string;
   observacao?: string;
   created_at: string;
   itens?: RecebimentoItem[];
@@ -110,6 +111,7 @@ export default function Recebimentos() {
     tipo_recebimento: "consumiveis",
     data_recebimento: format(new Date(), "yyyy-MM-dd"),
     foto_nota_url: "",
+    numero_nota: "",
     observacao: "",
   });
 
@@ -209,6 +211,7 @@ export default function Recebimentos() {
           tipo_recebimento: formData.tipo_recebimento,
           data_recebimento: formData.data_recebimento,
           foto_nota_url: formData.foto_nota_url || null,
+          numero_nota: formData.numero_nota || null,
           observacao: formData.observacao || null,
         })
         .select()
@@ -258,6 +261,7 @@ export default function Recebimentos() {
           tipo_recebimento: formData.tipo_recebimento,
           data_recebimento: formData.data_recebimento,
           foto_nota_url: formData.foto_nota_url || null,
+          numero_nota: formData.numero_nota || null,
           observacao: formData.observacao || null,
         })
         .eq("id", selectedRecebimento.id);
@@ -295,6 +299,7 @@ export default function Recebimentos() {
       tipo_recebimento: "consumiveis",
       data_recebimento: format(new Date(), "yyyy-MM-dd"),
       foto_nota_url: "",
+      numero_nota: "",
       observacao: "",
     });
     setItens([{ descricao: "", quantidade: 1, unidade: "UN", observacao: "" }]);
@@ -354,6 +359,7 @@ export default function Recebimentos() {
       tipo_recebimento: recebimento.tipo_recebimento,
       data_recebimento: recebimento.data_recebimento,
       foto_nota_url: recebimento.foto_nota_url || "",
+      numero_nota: recebimento.numero_nota || "",
       observacao: recebimento.observacao || "",
     });
 
@@ -447,7 +453,7 @@ export default function Recebimentos() {
     }
   };
 
-  // Exportar para Excel com link para abrir imagem
+  // Exportar para Excel com imagem embutida
   const exportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Sistema de Recebimentos';
@@ -458,7 +464,7 @@ export default function Recebimentos() {
     });
 
     // Título
-    worksheet.mergeCells('A1:G1');
+    worksheet.mergeCells('A1:H1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = 'Relatório de Recebimentos';
     titleCell.font = { bold: true, size: 18, color: { argb: 'FF1E3A5F' } };
@@ -466,7 +472,7 @@ export default function Recebimentos() {
     worksheet.getRow(1).height = 35;
 
     // Subtítulo com data
-    worksheet.mergeCells('A2:G2');
+    worksheet.mergeCells('A2:H2');
     const subtitleCell = worksheet.getCell('A2');
     subtitleCell.value = `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`;
     subtitleCell.font = { italic: true, size: 10, color: { argb: 'FF666666' } };
@@ -475,7 +481,7 @@ export default function Recebimentos() {
 
     // Cabecalho da tabela
     const headerRow = worksheet.getRow(4);
-    const headers = ['#', 'Data', 'Fornecedor', 'Tipo', 'Itens Recebidos', 'Observacao', 'Ver Nota Fiscal'];
+    const headers = ['#', 'Data', 'Fornecedor', 'N° Nota', 'Tipo', 'Itens Recebidos', 'Observacao', 'Nota Fiscal'];
     headers.forEach((header, index) => {
       const cell = headerRow.getCell(index + 1);
       cell.value = header;
@@ -492,11 +498,12 @@ export default function Recebimentos() {
     // Larguras das colunas
     worksheet.getColumn(1).width = 5;   // #
     worksheet.getColumn(2).width = 12;  // Data
-    worksheet.getColumn(3).width = 25;  // Fornecedor
-    worksheet.getColumn(4).width = 15;  // Tipo
-    worksheet.getColumn(5).width = 40;  // Itens
-    worksheet.getColumn(6).width = 25;  // Observacao
-    worksheet.getColumn(7).width = 25;  // Ver Nota Fiscal (link)
+    worksheet.getColumn(3).width = 22;  // Fornecedor
+    worksheet.getColumn(4).width = 15;  // N° Nota
+    worksheet.getColumn(5).width = 14;  // Tipo
+    worksheet.getColumn(6).width = 35;  // Itens
+    worksheet.getColumn(7).width = 20;  // Observacao
+    worksheet.getColumn(8).width = 18;  // Nota Fiscal (imagem)
 
     let rowIndex = 5;
     let contador = 1;
@@ -513,14 +520,15 @@ export default function Recebimentos() {
       row.getCell(1).value = contador;
       row.getCell(2).value = format(new Date(r.data_recebimento), "dd/MM/yyyy");
       row.getCell(3).value = r.fornecedor;
-      row.getCell(4).value = getTipoLabel(r.tipo_recebimento);
-      row.getCell(5).value = itensStr;
-      row.getCell(5).alignment = { wrapText: true, vertical: 'top' };
-      row.getCell(6).value = r.observacao || "-";
+      row.getCell(4).value = r.numero_nota || "-";
+      row.getCell(5).value = getTipoLabel(r.tipo_recebimento);
+      row.getCell(6).value = itensStr;
+      row.getCell(6).alignment = { wrapText: true, vertical: 'top' };
+      row.getCell(7).value = r.observacao || "-";
 
       // Estilo alternado
       const bgColor = contador % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF';
-      for (let i = 1; i <= 7; i++) {
+      for (let i = 1; i <= 8; i++) {
         row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
         row.getCell(i).border = {
           bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
@@ -528,27 +536,40 @@ export default function Recebimentos() {
         row.getCell(i).alignment = { ...row.getCell(i).alignment, vertical: 'middle' };
       }
 
-      // Adicionar link para abrir imagem
+      // Adicionar imagem embutida na célula
       if (r.foto_nota_url) {
-        const linkCell = row.getCell(7);
-        linkCell.value = {
-          text: 'CLIQUE PARA VER IMAGEM',
-          hyperlink: r.foto_nota_url,
-        };
-        linkCell.font = { 
-          color: { argb: 'FF0066CC' }, 
-          underline: true, 
-          bold: true,
-          size: 10 
-        };
-        linkCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        try {
+          const imageData = await imageUrlToArrayBuffer(r.foto_nota_url);
+          if (imageData) {
+            const imageId = workbook.addImage({
+              buffer: imageData.buffer,
+              extension: imageData.extension,
+            });
+            
+            // Definir altura da linha para acomodar a imagem
+            row.height = 80;
+            
+            // Adicionar imagem à célula (coluna H = índice 7)
+            worksheet.addImage(imageId, {
+              tl: { col: 7, row: rowIndex - 1 },
+              ext: { width: 100, height: 75 },
+            });
+          } else {
+            row.getCell(8).value = "Erro ao carregar";
+            row.getCell(8).font = { italic: true, color: { argb: 'FF999999' } };
+            row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+          }
+        } catch (error) {
+          console.error("Erro ao adicionar imagem:", error);
+          row.getCell(8).value = "Erro";
+          row.getCell(8).font = { italic: true, color: { argb: 'FF999999' } };
+        }
       } else {
-        row.getCell(7).value = "Sem anexo";
-        row.getCell(7).font = { italic: true, color: { argb: 'FF999999' } };
-        row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(8).value = "Sem anexo";
+        row.getCell(8).font = { italic: true, color: { argb: 'FF999999' } };
+        row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.height = Math.max(25, itensData?.length ? itensData.length * 15 + 10 : 25);
       }
-
-      row.height = Math.max(25, itensData?.length ? itensData.length * 15 + 10 : 25);
 
       rowIndex++;
       contador++;
@@ -556,7 +577,7 @@ export default function Recebimentos() {
 
     // Rodape
     const footerRow = worksheet.getRow(rowIndex + 1);
-    worksheet.mergeCells(`A${rowIndex + 1}:G${rowIndex + 1}`);
+    worksheet.mergeCells(`A${rowIndex + 1}:H${rowIndex + 1}`);
     footerRow.getCell(1).value = `Total de ${filteredRecebimentos.length} recebimento(s)`;
     footerRow.getCell(1).font = { bold: true, size: 10 };
     footerRow.getCell(1).alignment = { horizontal: 'right' };
@@ -853,15 +874,26 @@ export default function Recebimentos() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="data">Data de Recebimento *</Label>
-        <Input
-          id="data"
-          type="date"
-          value={formData.data_recebimento}
-          onChange={(e) => setFormData({ ...formData, data_recebimento: e.target.value })}
-          required
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="data">Data de Recebimento *</Label>
+          <Input
+            id="data"
+            type="date"
+            value={formData.data_recebimento}
+            onChange={(e) => setFormData({ ...formData, data_recebimento: e.target.value })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="numero_nota">Número da Nota Fiscal</Label>
+          <Input
+            id="numero_nota"
+            value={formData.numero_nota}
+            onChange={(e) => setFormData({ ...formData, numero_nota: e.target.value })}
+            placeholder="Ex: 123456"
+          />
+        </div>
       </div>
 
       {/* Itens */}
@@ -1086,9 +1118,10 @@ export default function Recebimentos() {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Fornecedor</TableHead>
+                      <TableHead>N° Nota</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Observação</TableHead>
-                      <TableHead className="text-center">Nota</TableHead>
+                      <TableHead className="text-center">Foto Nota</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1102,6 +1135,9 @@ export default function Recebimentos() {
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">{recebimento.fornecedor}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {recebimento.numero_nota || "-"}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={getTipoBadgeVariant(recebimento.tipo_recebimento) as any}>
                             {getTipoLabel(recebimento.tipo_recebimento)}
@@ -1171,6 +1207,12 @@ export default function Recebimentos() {
                   <Label className="text-muted-foreground text-xs">Data</Label>
                   <p className="font-medium">
                     {format(new Date(selectedRecebimento.data_recebimento), "dd/MM/yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">N° Nota Fiscal</Label>
+                  <p className="font-medium font-mono">
+                    {selectedRecebimento.numero_nota || "-"}
                   </p>
                 </div>
                 <div>

@@ -439,6 +439,7 @@ export type Database = {
           fornecedor: string
           foto_nota_url: string | null
           id: string
+          numero_nota: string | null
           observacao: string | null
           tipo_recebimento: string
           updated_at: string | null
@@ -450,6 +451,7 @@ export type Database = {
           fornecedor: string
           foto_nota_url?: string | null
           id?: string
+          numero_nota?: string | null
           observacao?: string | null
           tipo_recebimento: string
           updated_at?: string | null
@@ -461,6 +463,7 @@ export type Database = {
           fornecedor?: string
           foto_nota_url?: string | null
           id?: string
+          numero_nota?: string | null
           observacao?: string | null
           tipo_recebimento?: string
           updated_at?: string | null
