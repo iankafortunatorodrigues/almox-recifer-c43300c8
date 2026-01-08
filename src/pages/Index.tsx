@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, LogOut, Settings2, ShoppingBag, FileBarChart, ShoppingCart } from "lucide-react";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Plus, ArrowDownCircle, ArrowUpCircle, LogOut, Settings2, ShoppingBag, FileBarChart, ShoppingCart, Download } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
 const Index = () => {
@@ -47,6 +47,31 @@ const Index = () => {
   const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
   const [quickActionMaterial, setQuickActionMaterial] = useState<Material | null>(null);
   const [quickActionType, setQuickActionType] = useState<"entrada" | "saida" | "emprestimo" | "devolucao" | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // Capturar evento de instalação PWA
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      toast.info("Para instalar, use o menu do navegador ou já está instalado");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      toast.success("App instalado com sucesso!");
+    }
+    setDeferredPrompt(null);
+  };
 
   // Carregar materiais do banco de dados
   const loadMaterials = async () => {
@@ -750,6 +775,15 @@ const Index = () => {
             >
               <Settings2 className="h-4 w-4" />
               <span className="truncate">Config.</span>
+            </Button>
+            <Button 
+              onClick={handleInstallClick} 
+              variant="outline" 
+              size="sm"
+              className="gap-1.5"
+            >
+              <Download className="h-4 w-4" />
+              <span className="truncate">Instalar</span>
             </Button>
           </div>
         </div>
