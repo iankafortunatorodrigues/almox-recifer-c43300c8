@@ -141,10 +141,11 @@ All colors MUST be HSL.
     font-size: 16px !important;
   }
 
-  /* Better touch targets */
-  button, a, [role="button"] {
+  /* Better touch targets - but allow smaller sizes when explicitly set */
+  button:not([class*="h-"]):not([class*="size-"]), 
+  a:not([class*="h-"]):not([class*="size-"]), 
+  [role="button"]:not([class*="h-"]):not([class*="size-"]) {
     min-height: 44px;
-    min-width: 44px;
   }
 
   /* Smooth scrolling */
