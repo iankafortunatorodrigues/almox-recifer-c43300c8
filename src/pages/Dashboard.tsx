@@ -12,6 +12,7 @@ import {
   LogOut,
   Users,
   ClipboardList,
+  PackageCheck,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 
@@ -22,6 +23,13 @@ const menuItems = [
     icon: Package,
     path: "/almoxarifado",
     color: "from-blue-500 to-blue-600",
+  },
+  {
+    title: "Recebimento de Materiais",
+    description: "Registro de recebimentos e notas fiscais",
+    icon: PackageCheck,
+    path: "/recebimentos",
+    color: "from-teal-500 to-teal-600",
   },
   {
     title: "Compras e Suprimentos",

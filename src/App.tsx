@@ -14,6 +14,7 @@ import Purchases from "./pages/Purchases";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Reports from "./pages/Reports";
 import Suppliers from "./pages/Suppliers";
+import Recebimentos from "./pages/Recebimentos";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Suppliers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/recebimentos"
+              element={
+                <ProtectedRoute>
+                  <Recebimentos />
                 </ProtectedRoute>
               }
             />
