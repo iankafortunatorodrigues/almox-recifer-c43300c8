@@ -354,6 +354,7 @@ export default function Settings() {
                       <SelectContent>
                         <SelectItem value="almoxarife">Almoxarife</SelectItem>
                         <SelectItem value="compras">Compras</SelectItem>
+                        <SelectItem value="financeiro">Financeiro</SelectItem>
                         <SelectItem value="diretor">Diretoria</SelectItem>
                         <SelectItem value="admin">Administrador</SelectItem>
                       </SelectContent>
@@ -382,7 +383,8 @@ export default function Settings() {
                          <Badge variant="outline" className="mt-1">
                            {request.requested_role === "admin" ? "Admin" :
                             request.requested_role === "almoxarife" ? "Almoxarife" :
-                            request.requested_role === "compras" ? "Compras" : "Diretoria"}
+                            request.requested_role === "compras" ? "Compras" :
+                            request.requested_role === "financeiro" ? "Financeiro" : "Diretoria"}
                          </Badge>
                       </div>
                       <div className="flex gap-2">

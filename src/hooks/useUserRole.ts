@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type UserRole = "admin" | "compras" | "diretor" | "almoxarife" | null;
+export type UserRole = "admin" | "compras" | "diretor" | "almoxarife" | "financeiro" | null;
 
-// Priority order: admin > diretor > compras > almoxarife
+// Priority order: admin > diretor > financeiro > compras > almoxarife
 const rolePriority: Record<string, number> = {
-  admin: 4,
-  diretor: 3,
+  admin: 5,
+  diretor: 4,
+  financeiro: 3,
   compras: 2,
   almoxarife: 1,
 };
@@ -56,5 +57,13 @@ export function useUserRole() {
     fetchRole();
   }, [user]);
 
-  return { role, loading, isAdmin: role === "admin", isCompras: role === "compras", isDiretor: role === "diretor", isAlmoxarife: role === "almoxarife" };
+  return { 
+    role, 
+    loading, 
+    isAdmin: role === "admin", 
+    isCompras: role === "compras", 
+    isDiretor: role === "diretor", 
+    isAlmoxarife: role === "almoxarife",
+    isFinanceiro: role === "financeiro"
+  };
 }
