@@ -775,68 +775,75 @@ export default function PurchaseOrders() {
 
         {/* Orders List */}
         <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pedido</TableHead>
-                <TableHead className="hidden md:table-cell">Itens</TableHead>
-                <TableHead className="hidden sm:table-cell">Centro Custo</TableHead>
-                <TableHead>Urgência</TableHead>
-                <TableHead className="hidden lg:table-cell">Solicitante</TableHead>
-                <TableHead className="hidden md:table-cell">Data</TableHead>
-                <TableHead className="text-center">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nenhum pedido encontrado
-                  </TableCell>
+                  <TableHead className="whitespace-nowrap">Pedido</TableHead>
+                  <TableHead className="hidden lg:table-cell whitespace-nowrap">Itens</TableHead>
+                  <TableHead className="hidden md:table-cell whitespace-nowrap">Centro Custo</TableHead>
+                  <TableHead className="whitespace-nowrap">Urgência</TableHead>
+                  <TableHead className="hidden xl:table-cell whitespace-nowrap">Solicitante</TableHead>
+                  <TableHead className="hidden sm:table-cell whitespace-nowrap">Data</TableHead>
+                  <TableHead className="text-center whitespace-nowrap sticky right-0 bg-background">Ações</TableHead>
                 </TableRow>
-              ) : (
-                filteredOrders.map((order) => (
-                  <TableRow
-                    key={order.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => viewOrderDetails(order)}
-                  >
-                    <TableCell>
-                      <div className="font-bold text-primary">{order.numero_pedido}</div>
-                      <div className="text-xs text-muted-foreground sm:hidden">
-                        {order.items?.length || 0} itens
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="max-w-[200px] truncate">
-                        {order.items?.map((i) => i.descricao).join(", ") || "-"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {order.items?.length || 0} itens
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">{order.centro_custo}</TableCell>
-                    <TableCell>
-                      <Badge className={URGENCIA_CONFIG[order.urgencia].color}>
-                        {URGENCIA_CONFIG[order.urgencia].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {order.solicitante_nome}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {format(new Date(order.created_at), "dd/MM/yyyy")}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      Nenhum pedido encontrado
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <TableRow
+                      key={order.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => viewOrderDetails(order)}
+                    >
+                      <TableCell>
+                        <div className="font-bold text-primary text-sm">{order.numero_pedido}</div>
+                        <div className="text-xs text-muted-foreground lg:hidden">
+                          {order.items?.length || 0} itens
+                        </div>
+                        {/* Mostrar centro de custo em mobile */}
+                        <div className="text-xs text-muted-foreground md:hidden">
+                          {order.centro_custo}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="max-w-[200px] truncate text-sm">
+                          {order.items?.map((i) => i.descricao).join(", ") || "-"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {order.items?.length || 0} itens
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">{order.centro_custo}</TableCell>
+                      <TableCell>
+                        <Badge className={`${URGENCIA_CONFIG[order.urgencia].color} text-xs`}>
+                          <span className="hidden sm:inline">{URGENCIA_CONFIG[order.urgencia].label}</span>
+                          <span className="sm:hidden">{order.urgencia.charAt(0).toUpperCase()}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell text-sm">
+                        {order.solicitante_nome}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm whitespace-nowrap">
+                        {format(new Date(order.created_at), "dd/MM/yy")}
+                      </TableCell>
+                      <TableCell className="text-center sticky right-0 bg-background">
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       </main>
 
