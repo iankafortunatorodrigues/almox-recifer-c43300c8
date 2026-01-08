@@ -394,6 +394,95 @@ export type Database = {
           },
         ]
       }
+      recebimento_itens: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          id: string
+          observacao: string | null
+          quantidade: number
+          recebimento_id: string
+          unidade: string
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          id?: string
+          observacao?: string | null
+          quantidade?: number
+          recebimento_id: string
+          unidade?: string
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          observacao?: string | null
+          quantidade?: number
+          recebimento_id?: string
+          unidade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimento_itens_recebimento_id_fkey"
+            columns: ["recebimento_id"]
+            isOneToOne: false
+            referencedRelation: "recebimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recebimentos: {
+        Row: {
+          created_at: string | null
+          data_recebimento: string
+          fornecedor: string
+          foto_nota_url: string | null
+          id: string
+          observacao: string | null
+          tipo_recebimento: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_recebimento?: string
+          fornecedor: string
+          foto_nota_url?: string | null
+          id?: string
+          observacao?: string | null
+          tipo_recebimento: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_recebimento?: string
+          fornecedor?: string
+          foto_nota_url?: string | null
+          id?: string
+          observacao?: string | null
+          tipo_recebimento?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recebimentos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recebimentos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           ativo: boolean | null
