@@ -1,32 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Controle de Almoxarifado - Sistema de Gestão de Estoque</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <title>Recifer - Sistema de Almoxarifado</title>
     <meta name="description" content="Sistema PWA completo para gestão de almoxarifado com controle de estoque, entrada e saída de materiais, alertas automáticos e histórico de movimentações" />
-    <meta name="author" content="Lovable" />
+    <meta name="author" content="Recifer" />
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#1e3a5f" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Almoxarifado" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Recifer" />
     <link rel="apple-touch-icon" href="/pwa-icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <!-- Mobile optimization -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="HandheldFriendly" content="true" />
 
-    <meta property="og:title" content="d9c4fa18-7de2-4399-98c3-1cdcc14fb666" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <meta property="og:title" content="Recifer - Sistema de Almoxarifado" />
+    <meta property="og:description" content="Sistema de gestão de almoxarifado Recifer" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:site" content="@recifer" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
   </head>
 
-  <body>
+  <body class="safe-top safe-bottom">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
