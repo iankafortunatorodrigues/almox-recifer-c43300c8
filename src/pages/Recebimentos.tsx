@@ -55,6 +55,7 @@ import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import JSZip from "jszip";
 
 interface RecebimentoItem {
   id?: string;
@@ -419,10 +420,13 @@ export default function Recebimentos() {
     }
   };
 
-  // Exportar para Excel
+  // Exportar para Excel (ZIP com imagens)
   const exportToExcel = async () => {
+    const zip = new JSZip();
+    const notasFolder = zip.folder("notas_fiscais");
+    
     const dataToExport = await Promise.all(
-      filteredRecebimentos.map(async (r) => {
+      filteredRecebimentos.map(async (r, index) => {
         const { data: itensData } = await supabase
           .from("recebimento_itens")
           .select("*")
@@ -430,13 +434,26 @@ export default function Recebimentos() {
 
         const itensStr = itensData?.map((i) => `${i.descricao} (${i.quantidade} ${i.unidade})`).join("; ") || "";
 
+        let imagemNome = "";
+        if (r.foto_nota_url && notasFolder) {
+          try {
+            const response = await fetch(r.foto_nota_url);
+            const blob = await response.blob();
+            const ext = r.foto_nota_url.split('.').pop()?.split('?')[0] || 'jpg';
+            imagemNome = `nota_${index + 1}_${r.fornecedor.replace(/[^a-zA-Z0-9]/g, '_')}.${ext}`;
+            notasFolder.file(imagemNome, blob);
+          } catch {
+            imagemNome = "Erro ao baixar";
+          }
+        }
+
         return {
           Data: format(new Date(r.data_recebimento), "dd/MM/yyyy"),
           Fornecedor: r.fornecedor,
           Tipo: getTipoLabel(r.tipo_recebimento),
           Itens: itensStr,
           Observação: r.observacao || "",
-          "Link Nota Fiscal": r.foto_nota_url || "",
+          "Arquivo Nota Fiscal": imagemNome ? `notas_fiscais/${imagemNome}` : "",
         };
       })
     );
@@ -450,13 +467,23 @@ export default function Recebimentos() {
       { wch: 15 }, // Tipo
       { wch: 40 }, // Itens
       { wch: 25 }, // Observação
-      { wch: 50 }, // Link Nota Fiscal
+      { wch: 40 }, // Arquivo Nota Fiscal
     ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Recebimentos");
-    XLSX.writeFile(wb, `recebimentos_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
-    toast.success("Excel exportado com sucesso!");
+    
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    zip.file(`recebimentos_${format(new Date(), "yyyy-MM-dd")}.xlsx`, excelBuffer);
+
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(zipBlob);
+    link.download = `recebimentos_${format(new Date(), "yyyy-MM-dd")}.zip`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    
+    toast.success("Excel + Notas Fiscais exportados com sucesso!");
   };
 
   // Exportar para PDF
