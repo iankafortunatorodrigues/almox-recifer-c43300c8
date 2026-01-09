@@ -687,9 +687,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="w-full max-w-full px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
+    <div className="min-h-screen min-h-[100dvh] bg-background w-full overflow-x-hidden">
+      <header className="border-b bg-card sticky top-0 z-10 w-full">
+        <div className="w-full px-2 sm:px-4 lg:px-6 py-3 sm:py-4 box-border">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img src={logo} alt="Recifer Logo" className="h-12 w-12 sm:h-16 sm:w-16 object-contain" />
@@ -791,7 +791,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="w-full max-w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 overflow-x-hidden">
+      <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 overflow-x-hidden box-border">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <StatsCard title="Total de Itens" value={totalItems} icon={Package} variant="default" />
           <StatsCard title="Materiais Cadastrados" value={materials.length} icon={TrendingUp} variant="success" />
