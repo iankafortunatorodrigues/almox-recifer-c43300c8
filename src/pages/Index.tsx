@@ -122,11 +122,15 @@ const Index = () => {
   const loadMovements = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("movimentacoes")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("data", { ascending: false });
+    let query = supabase.from("movimentacoes").select("*");
+    
+    // Compras pode ver todas as movimentações (RLS permite via policy)
+    // Outros usuários veem apenas suas próprias movimentações
+    if (!isCompras) {
+      query = query.eq("user_id", user.id);
+    }
+    
+    const { data, error } = await query.order("data", { ascending: false });
 
     if (error) {
       toast.error("Erro ao carregar movimentações");
