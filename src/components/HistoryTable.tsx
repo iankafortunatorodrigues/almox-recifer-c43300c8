@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/table";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 interface HistoryTableProps {
   movements: Movimentacao[];
@@ -150,6 +152,28 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
     });
 
     doc.save(`movimentacoes_${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success("PDF exportado com sucesso!");
+  };
+
+  const exportToExcel = () => {
+    const data = filteredMovements.map((movement) => {
+      const material = getMaterial(movement.materialId);
+      return {
+        "Data/Hora": formatDate(movement.data),
+        "Tipo": getMovementLabel(movement.tipo),
+        "Material": getMaterialName(movement.materialId),
+        "Categoria": material?.categoria || "-",
+        "Quantidade": movement.quantidade,
+        "Responsável": movement.responsavel,
+        "Observação": movement.observacao || "-",
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Movimentações");
+    XLSX.writeFile(wb, `movimentacoes_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Excel exportado com sucesso!");
   };
 
   return (
@@ -212,11 +236,16 @@ export function HistoryTable({ movements, materials, onEdit, onDelete }: History
           onChange={(e) => setFilterEndDate(e.target.value)}
         />
 
-        <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-2">
-          <Download className="h-4 w-4" />
-          <span className="hidden sm:inline">Exportar PDF</span>
-          <span className="sm:hidden">PDF</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportToPDF} variant="outline" size="sm" className="gap-2">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">PDF</span>
+          </Button>
+          <Button onClick={exportToExcel} variant="outline" size="sm" className="gap-2">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Excel</span>
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card overflow-x-auto">
