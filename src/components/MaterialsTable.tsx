@@ -257,23 +257,23 @@ export function MaterialsTable({
       ) : (
       /* Desktop: Table View */
       <div className="rounded-lg border bg-card w-full overflow-hidden">
-        <div className="overflow-x-auto w-full">
-          <Table className="w-full table-fixed">
+        <div className="overflow-x-auto w-full max-w-full">
+          <Table className="w-full min-w-[800px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">Foto</TableHead>
-                <TableHead className="w-[70px]">Código</TableHead>
-                <TableHead className="w-[150px]">Descrição</TableHead>
-                <TableHead className="hidden xl:table-cell w-[80px]">Categ.</TableHead>
-                <TableHead className="text-center w-[60px]">Qtd.</TableHead>
-                <TableHead className="text-center hidden lg:table-cell w-[45px]">Mín.</TableHead>
-                <TableHead className="text-center hidden lg:table-cell w-[45px]">Máx.</TableHead>
-                <TableHead className="text-center hidden xl:table-cell w-[60px] text-primary">Comprar</TableHead>
-                <TableHead className="text-center hidden xl:table-cell w-[70px]">V.Unit.</TableHead>
-                <TableHead className="text-center hidden xl:table-cell w-[70px]">V.Total</TableHead>
-                <TableHead className="text-center w-[65px]">Status</TableHead>
-                <TableHead className="w-[100px]">Local</TableHead>
-                <TableHead className="text-center w-[90px]">Ações</TableHead>
+                <TableHead className="w-12 min-w-[48px]">Foto</TableHead>
+                <TableHead className="w-16 min-w-[64px]">Código</TableHead>
+                <TableHead className="min-w-[120px]">Descrição</TableHead>
+                <TableHead className="hidden xl:table-cell w-20 min-w-[80px]">Categ.</TableHead>
+                <TableHead className="text-center w-14 min-w-[56px]">Qtd.</TableHead>
+                <TableHead className="text-center hidden lg:table-cell w-12 min-w-[48px]">Mín.</TableHead>
+                <TableHead className="text-center hidden lg:table-cell w-12 min-w-[48px]">Máx.</TableHead>
+                <TableHead className="text-center hidden xl:table-cell w-16 min-w-[64px] text-primary">Comprar</TableHead>
+                <TableHead className="text-center hidden xl:table-cell w-16 min-w-[64px]">V.Unit.</TableHead>
+                <TableHead className="text-center hidden xl:table-cell w-16 min-w-[64px]">V.Total</TableHead>
+                <TableHead className="text-center w-16 min-w-[64px]">Status</TableHead>
+                <TableHead className="w-20 min-w-[80px]">Local</TableHead>
+                <TableHead className="text-center w-20 min-w-[80px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
           <TableBody>
