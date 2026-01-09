@@ -38,8 +38,12 @@ import {
   MapPin,
   User,
   FileText,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface Supplier {
   id: string;
@@ -222,6 +226,61 @@ export default function Suppliers() {
     setShowDeleteConfirm(true);
   };
 
+  // Exportar para PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text("Relatório de Fornecedores", 14, 22);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, 14, 30);
+    doc.text(`Total: ${filteredSuppliers.length} fornecedores`, 14, 36);
+
+    autoTable(doc, {
+      startY: 42,
+      head: [["Nome", "CNPJ", "Email", "Telefone", "Cidade/UF", "Categoria", "Status"]],
+      body: filteredSuppliers.map((s) => [
+        s.nome,
+        s.cnpj || "-",
+        s.email || "-",
+        s.telefone || "-",
+        s.cidade ? `${s.cidade}${s.estado ? "/" + s.estado : ""}` : "-",
+        s.categoria || "-",
+        s.ativo ? "Ativo" : "Inativo",
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 58, 95] },
+    });
+
+    doc.save("fornecedores.pdf");
+    toast.success("PDF exportado com sucesso!");
+  };
+
+  // Exportar para Excel
+  const exportToExcel = () => {
+    const data = filteredSuppliers.map((s) => ({
+      Nome: s.nome,
+      CNPJ: s.cnpj || "",
+      Email: s.email || "",
+      Telefone: s.telefone || "",
+      Endereço: s.endereco || "",
+      Cidade: s.cidade || "",
+      Estado: s.estado || "",
+      CEP: s.cep || "",
+      "Contato Nome": s.contato_nome || "",
+      "Contato Telefone": s.contato_telefone || "",
+      Categoria: s.categoria || "",
+      Observação: s.observacao || "",
+      Status: s.ativo ? "Ativo" : "Inativo",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Fornecedores");
+    XLSX.writeFile(wb, "fornecedores.xlsx");
+    toast.success("Excel exportado com sucesso!");
+  };
+
   if (roleLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -258,16 +317,28 @@ export default function Suppliers() {
 
       {/* Content */}
       <main className="container max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
-        {/* Search */}
+        {/* Search and Export */}
         <Card className="p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, CNPJ, email, cidade ou categoria..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, CNPJ, email, cidade ou categoria..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={exportToPDF} className="gap-1.5">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">PDF</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-1.5">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Excel</span>
+              </Button>
+            </div>
           </div>
         </Card>
 
