@@ -58,7 +58,7 @@ export function MovementForm({ materials, type, onSubmit, onSubmitBatch, onCance
     descricao: "",
   });
 
-  const isBatchMode = type === "entrada" && !initialData;
+  const isBatchMode = (type === "entrada" || type === "saida") && !initialData && !isManualEntry;
 
   const filteredMaterials = useMemo(() => {
     if (!searchQuery) return materials;
@@ -79,10 +79,19 @@ export function MovementForm({ materials, type, onSubmit, onSubmitBatch, onCance
     if (!formData.materialId || !formData.quantidade) return;
     
     const material = materials.find(m => m.id === formData.materialId);
+    const quantidade = Number(formData.quantidade);
+    
+    // For saida, validate stock
+    if (type === "saida" && material && material.tipo !== "consumivel") {
+      if (quantidade > material.quantidadeAtual) {
+        return; // Cannot add more than available stock
+      }
+    }
+    
     const newItem: MovementItem = {
       id: crypto.randomUUID(),
       materialId: formData.materialId,
-      quantidade: Number(formData.quantidade),
+      quantidade: quantidade,
       materialInfo: material,
     };
     
@@ -161,7 +170,7 @@ export function MovementForm({ materials, type, onSubmit, onSubmitBatch, onCance
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            Materiais adicionados ({movementItems.length})
+            Materiais {type === "saida" ? "para saída" : "adicionados"} ({movementItems.length})
           </Label>
           <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
             {movementItems.map((item) => (
@@ -179,11 +188,15 @@ export function MovementForm({ materials, type, onSubmit, onSubmitBatch, onCance
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Local: {item.materialInfo?.localizacao}
+                    {type === "saida" && item.materialInfo?.tipo !== "consumivel" && (
+                      <span className="ml-2">| Estoque: {item.materialInfo?.quantidadeAtual}</span>
+                    )}
                   </p>
                 </div>
                 <Input
                   type="number"
                   min="1"
+                  max={type === "saida" && item.materialInfo?.tipo !== "consumivel" ? item.materialInfo?.quantidadeAtual : undefined}
                   value={item.quantidade}
                   onChange={(e) => handleUpdateQuantity(item.id, Number(e.target.value))}
                   className="w-20 h-8"
@@ -346,7 +359,9 @@ export function MovementForm({ materials, type, onSubmit, onSubmitBatch, onCance
               ? `Entrada (${movementItems.length} ${movementItems.length === 1 ? 'item' : 'itens'})`
               : "Entrada"
             : type === "saida" 
-              ? isManualEntry ? "Saída de Consumo" : "Saída"
+              ? isBatchMode && movementItems.length > 0
+                ? `Saída (${movementItems.length} ${movementItems.length === 1 ? 'item' : 'itens'})`
+                : isManualEntry ? "Saída de Consumo" : "Saída"
               : type === "emprestimo" 
                 ? "Empréstimo" 
                 : "Devolução"}
